@@ -1,0 +1,390 @@
+---
+title: "main_consumer_exit_analysis"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list=ls())
+```
+
+# Loading packages:
+```{r include=FALSE}
+library(psych)
+library(qwraps2)
+library(DescTools)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+library(dplyr)
+library(ggplot2)
+library(magrittr)
+library(tidyr)
+library(jtools)
+library(tidyverse)
+library(haven)
+library(lmtest)
+library(sandwich)
+library(modelsummary)
+require(foreign)
+require(MASS)
+require(Hmisc)
+require(reshape2)
+```
+
+
+# Loading the data set:
+```{r}
+main_data <- read.csv("consumer_survey_data.csv", head = TRUE, sep = ",")
+main_data$frequent_user <- ifelse(main_data$freq_of_use_top_choice < 3, 1, 0)
+data_switched_df <- main_data[main_data$switch_in_preference == 1, ]
+```
+
+
+```{r}
+data_switched_C <- data_switched_df[data_switched_df$control_group == 1, ]
+n_switched_C <- nrow(data_switched_C)
+
+data_C <- main_data[main_data$control_group == 1, ]
+n_C <- nrow(data_C)
+
+data_T1 <- main_data[main_data$T1_group == 1, ]
+n_T1 <- nrow(data_T1)
+
+data_T2 <- main_data[main_data$T2_group == 1, ]
+n_T2 <- nrow(data_T2)
+
+data_T3 <- main_data[main_data$T3_group == 1, ]
+n_T3 <- nrow(data_T3)
+
+data_T4 <- main_data[main_data$T4_group == 1, ]
+n_T4 <- nrow(data_T4)
+
+print(n_C)
+print(n_T1)
+print(n_T2)
+print(n_T3)
+print(n_T4)
+```
+
+```{r}
+control_set = ~. + factor(age) + gender_female + factor(residence) + factor(race) + vote_biden + 
+                 factor(education) + factor(employment) + factor(household_income) + 
+                 factor(news_sources) + news_media_trust_low + factor(num_platforms_used) + 
+                 petition_signer + consumes_misinfo + factor(top_ranked_choice) + frequent_user
+```
+
+
+# SWITCH IN PREFERENCE
+```{r}
+print(mean(data_C$switch_in_preference))
+changed_preference_reg <- lm(switch_in_preference ~ group, data = main_data) 
+tab_model(changed_preference_reg)
+
+switch_coeftest <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+switch_coeftest
+```
+
+
+```{r}
+changed_preference_reg <- lm(update(switch_in_preference ~ group, control_set), data = main_data) 
+tab_model(changed_preference_reg)
+
+switch_coeftest_c <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+switch_coeftest_c
+```
+
+
+# SWITCH TO LOWER WEIGHT/PREFERENCE:
+```{r}
+print(mean(data_C$weight_diff_negative))
+changed_preference_reg <- lm(weight_diff_negative ~ group, data = main_data) 
+tab_model(changed_preference_reg)
+
+weight_coeftest <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+weight_coeftest
+```
+
+```{r}
+changed_preference_reg <- lm(update(weight_diff_negative ~ group, control_set), data = main_data) 
+tab_model(changed_preference_reg)
+
+weight_coeftest_c <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+weight_coeftest_c
+```
+
+# SWITCHED CATEGORIES
+```{r}
+print(mean(data_C$switched_categories))
+changed_preference_reg <- lm(switched_categories ~ group, data = main_data) 
+tab_model(changed_preference_reg)
+
+category_coeftest <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+category_coeftest
+```
+
+```{r}
+changed_preference_reg <- lm(update(switched_categories ~ group, control_set), data = main_data) 
+tab_model(changed_preference_reg)
+
+category_coeftest_c <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+category_coeftest_c
+```
+
+
+# SWITCHED TO LOWER MISINFO
+```{r}
+print(mean(data_switched_C$switch_misinfo_mag))
+changed_preference_reg <- lm(switch_misinfo_mag ~ group, data = data_switched_df) 
+tab_model(changed_preference_reg)
+
+switch_misinfo_mag_coeftest <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+switch_misinfo_mag_coeftest
+```
+
+```{r}
+changed_preference_reg <- lm(update(switch_misinfo_mag ~ group, control_set), data = data_switched_df) 
+tab_model(changed_preference_reg)
+
+switch_misinfo_mag_coeftest_c <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+switch_misinfo_mag_coeftest_c
+```
+
+
+```{r}
+library("texreg")
+
+texreg(list(switch_coeftest,
+            switch_coeftest_c,
+            weight_coeftest,
+            weight_coeftest_c, 
+            category_coeftest,
+            category_coeftest_c, 
+            switch_misinfo_mag_coeftest, 
+            switch_misinfo_mag_coeftest_c), 
+       stars = c(0.01, 0.05, 0.1))
+```
+
+#---------------------------------------------------------------------------------------------------------------
+
+
+# Pairwise p-value comparisons:
+
+
+# SWITCH IN PREFERENCE
+```{r}
+changed_preference_reg <- lm(switch_in_preference ~ relevel(as.factor(group), ref = "T2"), data = main_data) 
+tab_model(changed_preference_reg)
+
+switch_coeftest_T2 <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+switch_coeftest_T2
+```
+
+
+```{r}
+changed_preference_reg <- lm(switch_in_preference ~ relevel(as.factor(group), ref = "T3"), data = main_data) 
+tab_model(changed_preference_reg)
+
+switch_coeftest_T3 <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+switch_coeftest_T3
+```
+
+```{r}
+changed_preference_reg <- lm(switch_in_preference ~ relevel(as.factor(group), ref = "T4"), data = main_data) 
+tab_model(changed_preference_reg)
+
+switch_coeftest_T4 <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+switch_coeftest_T4
+```
+
+```{r}
+changed_preference_reg <- lm(update(switch_in_preference ~ relevel(as.factor(group), ref = "T2"), control_set), 
+                             data = main_data) 
+tab_model(changed_preference_reg)
+
+switch_coeftest_c_T2 <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+switch_coeftest_c_T2
+```
+
+```{r}
+changed_preference_reg <- lm(update(switch_in_preference ~ relevel(as.factor(group), ref = "T3"), control_set), 
+                             data = main_data) 
+tab_model(changed_preference_reg)
+
+switch_coeftest_c_T3 <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+switch_coeftest_c_T3
+```
+
+```{r}
+changed_preference_reg <- lm(update(switch_in_preference ~ relevel(as.factor(group), ref = "T4"), control_set), 
+                             data = main_data) 
+tab_model(changed_preference_reg)
+
+switch_coeftest_c_T4 <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+switch_coeftest_c_T4
+```
+
+# SWITCH TO LOWER WEIGHT/PREFERENCE:
+```{r}
+changed_preference_reg <- lm(weight_diff_negative ~ relevel(as.factor(group), ref = "T1"), 
+                             data = main_data) 
+tab_model(changed_preference_reg)
+
+weight_coeftest_T1 <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+weight_coeftest_T1
+```
+
+```{r}
+changed_preference_reg <- lm(weight_diff_negative ~ relevel(as.factor(group), ref = "T3"), 
+                             data = main_data) 
+tab_model(changed_preference_reg)
+
+weight_coeftest_T3 <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+weight_coeftest_T3
+```
+
+```{r}
+changed_preference_reg <- lm(weight_diff_negative ~ relevel(as.factor(group), ref = "T4"), 
+                             data = main_data) 
+tab_model(changed_preference_reg)
+
+weight_coeftest_T4 <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+weight_coeftest_T4
+```
+
+```{r}
+changed_preference_reg <- lm(update(weight_diff_negative ~ relevel(as.factor(group), ref = "T2"), control_set), 
+                             data = main_data)
+tab_model(changed_preference_reg)
+
+weight_coeftest_c_T2 <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+weight_coeftest_c_T2
+```
+    
+```{r}
+changed_preference_reg <- lm(update(weight_diff_negative ~ relevel(as.factor(group), ref = "T3"), control_set), 
+                             data = main_data)
+tab_model(changed_preference_reg)
+
+weight_coeftest_c_T3 <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+weight_coeftest_c_T3
+```    
+                             
+```{r}
+changed_preference_reg <- lm(update(weight_diff_negative ~ relevel(as.factor(group), ref = "T4"), control_set), 
+                             data = main_data)
+tab_model(changed_preference_reg)
+
+weight_coeftest_c_T4 <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+weight_coeftest_c_T4
+```
+
+# SWITCHED CATEGORIES
+
+```{r}
+changed_preference_reg <- lm(switched_categories ~ relevel(as.factor(group), ref = "T2"), 
+                             data = main_data)
+tab_model(changed_preference_reg)
+
+category_coeftest_T2 <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+category_coeftest_T2
+```
+
+```{r}
+changed_preference_reg <- lm(switched_categories ~ relevel(as.factor(group), ref = "T3"), 
+                             data = main_data)
+tab_model(changed_preference_reg)
+
+category_coeftest_T3 <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+category_coeftest_T3
+```
+
+```{r}
+changed_preference_reg <- lm(switched_categories ~ relevel(as.factor(group), ref = "T4"), 
+                             data = main_data)
+tab_model(changed_preference_reg)
+
+category_coeftest_T4 <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+category_coeftest_T4
+```
+
+```{r}
+changed_preference_reg <- lm(update(switched_categories ~ relevel(as.factor(group), ref = "T2"), control_set), 
+                             data = main_data) 
+tab_model(changed_preference_reg)
+
+category_coeftest_c_T2 <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+category_coeftest_c_T2
+```
+
+```{r}
+changed_preference_reg <- lm(update(switched_categories ~ relevel(as.factor(group), ref = "T3"), control_set), 
+                             data = main_data) 
+tab_model(changed_preference_reg)
+
+category_coeftest_c_T3 <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+category_coeftest_c_T3
+```
+
+```{r}
+changed_preference_reg <- lm(update(switched_categories ~ relevel(as.factor(group), ref = "T4"), control_set), 
+                             data = main_data) 
+tab_model(changed_preference_reg)
+
+category_coeftest_c_T4 <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+category_coeftest_c_T4
+```
+
+# SWITCHED TO LOWER MISINFO
+```{r}
+changed_preference_reg <- lm(switch_misinfo_mag ~ relevel(as.factor(group), ref = "T2"), data = data_switched_df) 
+tab_model(changed_preference_reg)
+
+switch_misinfo_mag_coeftest_T2 <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+switch_misinfo_mag_coeftest_T2
+```
+
+```{r}
+changed_preference_reg <- lm(switch_misinfo_mag ~ relevel(as.factor(group), ref = "T3"), data = data_switched_df) 
+tab_model(changed_preference_reg)
+
+switch_misinfo_mag_coeftest_T3 <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+switch_misinfo_mag_coeftest_T3
+```
+
+```{r}
+changed_preference_reg <- lm(switch_misinfo_mag ~ relevel(as.factor(group), ref = "T4"), data = data_switched_df) 
+tab_model(changed_preference_reg)
+
+switch_misinfo_mag_coeftest_T4 <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+switch_misinfo_mag_coeftest_T4
+```
+
+```{r}
+changed_preference_reg <- lm(update(switch_misinfo_mag ~ relevel(as.factor(group), ref = "T2"), control_set), 
+                             data = data_switched_df) 
+tab_model(changed_preference_reg)
+
+switch_misinfo_mag_coeftest_c_T2 <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+switch_misinfo_mag_coeftest_c_T2
+```
+
+```{r}
+changed_preference_reg <- lm(update(switch_misinfo_mag ~ relevel(as.factor(group), ref = "T3"), control_set), 
+                             data = data_switched_df) 
+tab_model(changed_preference_reg)
+
+switch_misinfo_mag_coeftest_c_T3 <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+switch_misinfo_mag_coeftest_c_T3
+```
+
+```{r}
+changed_preference_reg <- lm(update(switch_misinfo_mag ~ relevel(as.factor(group), ref = "T4"), control_set), 
+                             data = data_switched_df) 
+tab_model(changed_preference_reg)
+
+switch_misinfo_mag_coeftest_c_T4 <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+switch_misinfo_mag_coeftest_c_T4
+```
+
+
