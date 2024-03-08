@@ -1,0 +1,185 @@
+---
+title: "top_100_advertisers_panel"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list=ls())
+```
+
+# Loading packages:
+```{r include=FALSE}
+require(ggplot2)
+require(GGally)
+require(reshape2)
+require(lme4)
+require(compiler)
+require(parallel)
+require(boot)
+require(lattice)
+library(fixest)
+library(survival)
+library(lmtest)
+library(sandwich)
+library(psych)
+library(fastglm)
+library(qwraps2)
+library(DescTools)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+library(plm)
+library(pglm)
+library(yhat)
+library(dplyr)
+library(ggplot2)
+library(magrittr)
+library(tidyr)
+library(stargazer)
+library(jtools)
+library(tidyverse)
+library(haven)
+library(modelsummary)
+```
+
+
+# Loading the data set:
+```{r}
+data <- read.csv("top_100_advertisers_panel.csv", head = TRUE, sep = ",")
+
+month_controls = ~. + factor(month_year)
+
+industry_month_controls = ~. + industry_automotive + industry_apparel + industry_arms + 
+                         industry_business + industry_cosmetics + 
+                         industry_digital_publishing + industry_dining + industry_education +
+                         industry_finance + industry_food + industry_govt + industry_gas +
+                         industry_holding + industry_health + industry_household + 
+                         industry_insurance + industry_industrial +
+                         industry_kids + industry_media + industry_online_services +
+                         industry_print_publishing + industry_retail + 
+                         industry_technology + industry_telecommunications + industry_travel + 
+                         industry_unclassified + factor(month_year)
+
+industry_month_interaction_controls = ~. + industry_automotive * factor(month_year) +
+                                        industry_apparel * factor(month_year) + 
+                                        industry_arms * factor(month_year) + 
+                                        industry_business * factor(month_year) + 
+                                        industry_cosmetics * factor(month_year) + 
+                                        industry_digital_publishing * factor(month_year) + 
+                                        industry_dining * factor(month_year) + 
+                                        industry_education * factor(month_year) +
+                                        industry_finance * factor(month_year) + 
+                                        industry_food * factor(month_year) + 
+                                        industry_govt * factor(month_year) + 
+                                        industry_gas * factor(month_year) +
+                                        industry_holding * factor(month_year) + 
+                                        industry_health * factor(month_year) + 
+                                        industry_household * factor(month_year) + 
+                                        industry_insurance * factor(month_year) + 
+                                        industry_industrial * factor(month_year) +
+                                        industry_kids * factor(month_year) + 
+                                        industry_media * factor(month_year) + 
+                                        industry_online_services * factor(month_year) +
+                                        industry_print_publishing * factor(month_year) + 
+                                        industry_retail * factor(month_year) + 
+                                        industry_technology * factor(month_year) + 
+                                        industry_telecommunications * factor(month_year) + 
+                                        industry_travel * factor(month_year) + 
+                                        industry_unclassified * factor(month_year)
+```
+
+
+
+### APPEARS ON MISINFORMATION WEBSITES ##############################################################################
+
+```{r}
+appears_reg_3 <- feglm(update(appears_on_misinfo_websites ~ uses_platform, month_controls), 
+                                 family = binomial(link = "logit"),
+                                data = panel_data) 
+tab_model(appears_reg_3)
+
+appears_coeftest_month_FE <- coeftest(appears_reg_3, vcov = vcovHC(appears_reg_3, type = 'HC1'))
+appears_coeftest_month_FE
+```
+
+
+```{r}
+appears_reg_4 <- feglm(update(appears_on_misinfo_websites ~ uses_platform, industry_month_controls), 
+                                 family = binomial(link = "logit"),
+                                data = panel_data) 
+tab_model(appears_reg_4)
+
+appears_coeftest_industry_month_FE <- coeftest(appears_reg_4, vcov = vcovHC(appears_reg_4, type = 'HC1'))
+appears_coeftest_industry_month_FE
+```
+
+
+```{r}
+appears_reg_4 <- feglm(update(appears_on_misinfo_websites ~ uses_platform, industry_month_interaction_controls), 
+                                 family = binomial(link = "logit"),
+                                data = panel_data) 
+tab_model(appears_reg_4)
+
+appears_coeftest_industry_month_interaction_FE <- coeftest(appears_reg_4, vcov = vcovHC(appears_reg_4, type = 'HC1'))
+appears_coeftest_industry_month_interaction_FE
+```
+
+
+
+### NUMBER OF MISINFORMATION WEBSITES ##############################################################################
+
+```{r}
+num_websites_reg_3 <- feglm(update(num_misinfo_websites ~ uses_platform, month_controls),
+                            family = "poisson", data = data) 
+tab_model(num_websites_reg_3)
+
+num_websites_coeftest_month_FE <- coeftest(num_websites_reg_3, vcov = vcovHC(num_websites_reg_3, type = 'HC1'))
+num_websites_coeftest_month_FE
+```
+
+
+```{r}
+num_websites_reg_4 <- feglm(update(num_misinfo_websites ~ uses_platform, industry_month_controls),
+                            family = "poisson", data = data) 
+tab_model(num_websites_reg_4)
+
+num_websites_coeftest_industry_month_FE <- coeftest(num_websites_reg_4, vcov = vcovHC(num_websites_reg_4, type = 'HC1'))
+num_websites_coeftest_industry_month_FE
+```
+
+
+```{r}
+num_websites_reg_4 <- feglm(update(num_misinfo_websites ~ uses_platform, industry_month_interaction_controls),
+                            family = "poisson", data = data) 
+tab_model(num_websites_reg_4)
+
+num_websites_coeftest_industry_month_interaction_FE <- coeftest(num_websites_reg_4, 
+                                                                vcov = vcovHC(num_websites_reg_4, type = 'HC1'))
+num_websites_coeftest_industry_month_interaction_FE
+```
+
+
+
+```{r}
+library("texreg")
+texreg(list(appears_coeftest_month_FE,
+            appears_coeftest_industry_month_FE,
+            appears_coeftest_industry_month_interaction_FE,
+            
+            num_websites_coeftest_month_FE,
+            num_websites_coeftest_industry_month_FE,
+            num_websites_coeftest_industry_month_interaction_FE), 
+       stars = c(0.001,0.01,0.05,0.1), symbol = "\\circ")
+```
+
+
+
+
+
+
+
+
+
+
+
