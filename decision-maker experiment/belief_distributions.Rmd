@@ -1,0 +1,64 @@
+---
+title: "Decision-maker survey beliefs"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list=ls())
+```
+
+# Loading packages
+```{r include=FALSE}
+library(psych)
+library(qwraps2)
+library(DescTools)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+library(dplyr)
+library(ggplot2)
+library(magrittr)
+library(tidyr)
+library(stargazer)
+library(jtools)
+library(estimatr)
+library(tidyverse)
+library(haven)
+library(modelsummary)
+library(lmtest)
+library(sandwich)
+```
+
+
+Loading the data set:
+```{r}
+data <-  read.csv("decision_maker_survey_data.csv", head = TRUE, sep = ",")
+data$treatment <- ifelse((data$info_group == "Treatment"), 1, 0)
+
+data$prior_belief_platforms_win <- Winsorize(data$prior_belief_platforms, minval = NULL, maxval = NULL,
+                                       probs = c(0.00, 0.95), na.rm = TRUE, type = 7) 
+data$posterior_belief_win <- Winsorize(data$posterior_belief, minval = NULL, maxval = NULL,
+                                            probs = c(0.00, 0.95), na.rm = TRUE, type = 7)
+```
+
+
+# Companies prior beliefs:
+```{r}
+hist(data$prior_companies_1, breaks = 20, ylim = c(0, 100),
+     main="Distribution of Beliefs About Advertising Companies")
+```
+
+
+# Platforms prior beliefs:
+```{r}
+hist(data$prior_belief_platforms_win, breaks = 20, ylim = c(0, 100),
+     main = "Distribution of Beliefs About Digital Ad Platforms")
+```
+
+
+
+
+
+
+
