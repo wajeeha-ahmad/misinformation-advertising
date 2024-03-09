@@ -1,0 +1,284 @@
+---
+title: "Decision-maker survey"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list=ls())
+```
+
+# Loading packages
+```{r include=FALSE}
+library(psych)
+library(qwraps2)
+library(DescTools)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+library(dplyr)
+library(ggplot2)
+library(magrittr)
+library(tidyr)
+library(stargazer)
+library(jtools)
+library(estimatr)
+library(tidyverse)
+library(haven)
+library(modelsummary)
+library(lmtest)
+library(sandwich)
+```
+
+
+Loading the data set:
+```{r}
+data <-  read.csv("decision_maker_survey_data.csv", head = TRUE, sep = ",")
+data$treatment <- ifelse((data$info_group == "Treatment"), 1, 0)
+
+data$prior_belief_platforms_win <- Winsorize(data$prior_belief_platforms, minval = NULL, maxval = NULL,
+                                       probs = c(0.00, 0.95), na.rm = TRUE, type = 7) 
+data$posterior_belief_win <- Winsorize(data$posterior_belief, minval = NULL, maxval = NULL,
+                                            probs = c(0.00, 0.95), na.rm = TRUE, type = 7)
+```
+
+
+```{r}
+control_set = ~. + full_time_employee + 
+                     final_marketing + 
+                     duration_of_role + 
+                     num_employees + factor(industry) + US_HQ +
+                     prior_companies_1 + prior_belief_platforms_win + 
+                     uses_digital_ads + 
+                     consumer_info_demand_yes + requests_full_ad_check 
+```
+
+
+# Treatment and Control:
+```{r}
+data_C <- data[data$info_group == "Control", ]
+n_C <- nrow(data_C)
+print(n_C)
+
+data_T <- data[data$info_group == "Treatment", ]
+n_T <- nrow(data_T)
+print(n_T)
+
+n_T + n_C
+nrow(data)
+```
+
+# Prior own company belief:
+```{r}
+data_own_company_yes <-  data[data$prior_own_company == "Yes", ]
+n_own_company_yes <- nrow(data_own_company_yes)
+print(n_own_company_yes)
+
+data_own_company_no <-  data[data$prior_own_company == "No", ]
+n_own_company_no <- nrow(data_own_company_no)
+print(n_own_company_no)
+```
+
+
+
+
+############################################### FULL DATA ########################################################
+
+
+# Posterior beliefs: 
+```{r}
+posterior_beliefs_reg <- lm(update(posterior_belief_win ~ treatment, control_set), data = data)  
+tab_model(posterior_beliefs_reg)
+
+posterior_beliefs_coeftest_all <- coeftest(posterior_beliefs_reg, vcov = vcovHC(posterior_beliefs_reg, type = 'HC1'))
+posterior_beliefs_coeftest_all
+```
+
+```{r}
+posterior_beliefs_reg <- lm(update(posterior_belief_win ~ treatment, control_set), data = data_own_company_yes) 
+tab_model(posterior_beliefs_reg)
+
+posterior_beliefs_coeftest_yes <- coeftest(posterior_beliefs_reg, vcov = vcovHC(posterior_beliefs_reg, type = 'HC1'))
+posterior_beliefs_coeftest_yes
+```
+
+```{r}
+posterior_beliefs_reg <- lm(update(posterior_belief_win ~ treatment, control_set), data = data_own_company_no)
+tab_model(posterior_beliefs_reg)
+summary(posterior_beliefs_reg)
+
+posterior_beliefs_coeftest_no <- coeftest(posterior_beliefs_reg, vcov = vcovHC(posterior_beliefs_reg, type = 'HC1'))
+posterior_beliefs_coeftest_no
+```
+
+
+# Platform solution demand:
+```{r}
+platform_choice_reg <- lm(update(platform_choice_misinfo ~ treatment, control_set), data = data) 
+tab_model(platform_choice_reg)
+
+platform_choice_o1_coeftest_all <- coeftest(platform_choice_reg, vcov = vcovHC(platform_choice_reg, type = 'HC1'))
+platform_choice_o1_coeftest_all
+```
+
+```{r}
+platform_choice_reg <- lm(update(platform_choice_misinfo ~ treatment, control_set), data = data_own_company_yes)
+tab_model(platform_choice_reg)
+
+platform_choice_o1_coeftest_yes <- coeftest(platform_choice_reg, vcov = vcovHC(platform_choice_reg, type = 'HC1'))
+platform_choice_o1_coeftest_yes
+```
+
+```{r}
+platform_choice_reg <- lm(update(platform_choice_misinfo ~ treatment, control_set), data = data_own_company_no)
+tab_model(platform_choice_reg)
+
+platform_choice_o1_coeftest_no <- coeftest(platform_choice_reg, vcov = vcovHC(platform_choice_reg, type = 'HC1'))
+platform_choice_o1_coeftest_no
+```
+
+
+```{r}
+library("texreg")
+texreg(list(posterior_beliefs_coeftest_all,
+            posterior_beliefs_coeftest_yes, 
+            posterior_beliefs_coeftest_no,
+            platform_choice_o1_coeftest_all,
+            platform_choice_o1_coeftest_yes,
+            platform_choice_o1_coeftest_no), 
+       stars = c(0.01, 0.05, 0.10))
+```
+
+
+
+########################################### SUBSAMPLE ANALYSIS #####################################################
+
+# Selecting sub-samples based on own company belief confidence:
+```{r}
+data_own_company_uncertain_no <-  data_own_company_no[(data_own_company_no$prior_own_company_c == "Very unsure") |
+                                                      (data_own_company_no$prior_own_company_c == "Unsure"), ]
+n_own_company_uncertain_no <- nrow(data_own_company_uncertain_no)
+print("N (data_own_company_uncertain_no): ")
+print(n_own_company_uncertain_no)
+
+
+data_own_company_certain_no <-  data_own_company_no[(data_own_company_no$prior_own_company_c == "Somewhat sure") | 
+                                                 (data_own_company_no$prior_own_company_c == "Sure") | 
+                                                 (data_own_company_no$prior_own_company_c == "Very sure"), ]
+n_own_company_certain_no <- nrow(data_own_company_certain_no)
+print("N (data_own_company_certain_no): ")
+print(n_own_company_certain_no)
+```
+
+# Posterior beliefs: 
+```{r}
+posterior_beliefs_reg <- lm(update(posterior_belief_win ~ treatment, control_set), 
+                            data = data_own_company_certain_no)
+tab_model(posterior_beliefs_reg)
+
+posterior_beliefs_certain_no_coeftest <- coeftest(posterior_beliefs_reg, 
+                                                  vcov = vcovHC(posterior_beliefs_reg, type = 'HC1'))
+posterior_beliefs_certain_no_coeftest
+```
+
+
+```{r}
+posterior_beliefs_reg <- lm(update(posterior_belief_win ~ treatment, control_set), 
+                            data = data_own_company_uncertain_no)
+tab_model(posterior_beliefs_reg)
+
+posterior_beliefs_uncertain_no_coeftest <- coeftest(posterior_beliefs_reg, 
+                                                    vcov = vcovHC(posterior_beliefs_reg, type = 'HC1'))
+posterior_beliefs_uncertain_no_coeftest
+```
+
+
+# Platform solution demand:
+```{r}
+platform_choice_reg <- lm(update(platform_choice_misinfo ~ treatment, control_set), 
+                          data = data_own_company_certain_no)
+tab_model(platform_choice_reg)
+
+platform_choice_o1_coeftest_certain_no <- coeftest(platform_choice_reg, 
+                                                   vcov = vcovHC(platform_choice_reg, type = 'HC1'))
+platform_choice_o1_coeftest_certain_no
+```
+`
+
+```{r}
+platform_choice_reg <- lm(update(platform_choice_misinfo ~ treatment, control_set), 
+                          data = data_own_company_uncertain_no)
+tab_model(platform_choice_reg)
+
+platform_choice_o1_coeftest_uncertain_no <- coeftest(platform_choice_reg, 
+                                                     vcov = vcovHC(platform_choice_reg, type = 'HC1'))
+platform_choice_o1_coeftest_uncertain_no
+```
+
+
+
+```{r}
+library("texreg")
+texreg(list(posterior_beliefs_certain_no_coeftest,
+            posterior_beliefs_uncertain_no_coeftest,
+            platform_choice_o1_coeftest_certain_no,
+            platform_choice_o1_coeftest_uncertain_no), 
+       stars = c(0.01, 0.05, 0.10))
+```
+
+
+########################################### SUPPLEMENTARY ANALYSIS #####################################################
+
+
+# GDI donation:
+```{r}
+donation_GDI_reg <- lm(update(donation_GDI ~ treatment, control_set), data = data)
+tab_model(donation_GDI_reg)
+
+donation_GDI_all_coeftest <- coeftest(donation_GDI_reg, vcov = vcovHC(donation_GDI_reg, type = 'HC1'))
+donation_GDI_all_coeftest
+```
+
+```{r}
+donation_GDI_reg <- lm(update(donation_GDI ~ treatment, control_set), data = data_own_company_no)
+tab_model(donation_GDI_reg)
+
+donation_GDI_no_coeftest <- coeftest(donation_GDI_reg, vcov = vcovHC(donation_GDI_reg, type = 'HC1'))
+donation_GDI_no_coeftest
+```
+
+```{r}
+donation_GDI_reg <- lm(update(donation_GDI ~ treatment, control_set), data = data_own_company_certain_no)
+tab_model(donation_GDI_reg)
+
+donation_GDI_certain_no_coeftest <- coeftest(donation_GDI_reg, vcov = vcovHC(donation_GDI_reg, type = 'HC1'))
+donation_GDI_certain_no_coeftest
+```
+
+```{r}
+donation_GDI_reg <- lm(update(donation_GDI ~ treatment, control_set), data = data_own_company_uncertain_no)
+tab_model(donation_GDI_reg)
+
+donation_GDI_uncertain_no_coeftest <- coeftest(donation_GDI_reg, vcov = vcovHC(donation_GDI_reg, type = 'HC1'))
+donation_GDI_uncertain_no_coeftest
+```
+
+
+```{r}
+library("texreg")
+texreg(list(
+            donation_GDI_all_coeftest,
+            donation_GDI_no_coeftest, 
+            donation_GDI_certain_no_coeftest, 
+            donation_GDI_uncertain_no_coeftest), 
+       stars = c(0.01, 0.05, 0.10))
+```
+
+
+# Setting the dataset we want to the sub-sample of participants in managerial and executive roles:
+```{r}
+data_DM <- data[data$DM == 1, ] 
+n_DM <- nrow(data_DM)
+print(n_DM)
+data <- data_DM
+```
