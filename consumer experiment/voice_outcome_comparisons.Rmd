@@ -1,0 +1,364 @@
+---
+title: "voice_outcome_comparisons"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list=ls())
+```
+
+
+# Loading packages:
+```{r include=FALSE}
+library(psych)
+library(qwraps2)
+library(DescTools)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+library(dplyr)
+library(ggplot2)
+library(magrittr)
+library(tidyr)
+library(ivpack)
+library(jtools)
+library(tidyverse)
+library(haven)
+library(modelsummary)
+require(foreign)
+require(MASS)
+require(Hmisc)
+require(reshape2)
+```
+
+
+# Loading the data set:
+```{r}
+data <- read.csv("consumer_survey_data.csv", head = TRUE, sep = ",")
+```
+
+
+```{r}
+data_C <- data[data$group == "control", ]
+n_C <- nrow(data_C)
+
+data_T1 <- data[data$group == "T1", ]
+n_T1 <- nrow(data_T1)
+
+data_T2 <- data[data$group == "T2", ]
+n_T2 <- nrow(data_T2)
+
+data_T3 <- data[data$group == "T3", ]
+n_T3 <- nrow(data_T3)
+
+data_T4 <- data[data$group == "T4", ]
+n_T4 <- nrow(data_T4)
+
+print(n_C)
+print(n_T1)
+print(n_T2)
+print(n_T3)
+print(n_T4)
+```
+
+# COUNTING ACTUAL SIGNATURES 
+
+### COMPANY BLOCK SIGNS
+```{r}
+signs_company_petition_C <- 96/n_C
+signs_company_petition_T1 <- 111/n_T1
+signs_company_petition_T2 <- 84/n_T2
+signs_company_petition_T3 <- 89/n_T3
+
+print(signs_company_petition_C)
+print(signs_company_petition_T1)
+print(signs_company_petition_T2)
+print(signs_company_petition_T3)
+print("---------------------------")
+```
+
+
+
+### PLATFORMS BLOCK SIGNS
+```{r}
+signs_platforms_petition_C <- (85)/n_C
+signs_platforms_petition_T1 <- (73)/n_T1
+signs_platforms_petition_T2 <- (114)/n_T2
+signs_platforms_petition_T3 <- (86)/n_T3
+
+print(signs_platforms_petition_C)
+print(signs_platforms_petition_T1)
+print(signs_platforms_petition_T2)
+print(signs_platforms_petition_T3)
+print("---------------------------")
+```
+
+
+# CALCULATING DELTAS
+
+## COMPANY BLOCK 
+
+
+## Intention to sign:
+```{r}
+intention_company_petition_C <- sum(data_C$petition_company_block)/n_C
+intention_company_petition_T1 <- sum(data_T1$petition_company_block)/n_T1
+intention_company_petition_T2 <- sum(data_T2$petition_company_block)/n_T2
+intention_company_petition_T3 <- sum(data_T3$petition_company_block)/n_T3
+
+print(intention_company_petition_C)
+print(intention_company_petition_T1)
+print(intention_company_petition_T2)
+print(intention_company_petition_T3)
+print("---------------------------")
+```
+
+
+## Intention to sign - Delta:
+```{r}
+delta_intention_company_petition_C <- sum(data_C$petition_company_block)/n_C - signs_company_petition_C
+delta_intention_company_petition_T1 <- sum(data_T1$petition_company_block)/n_T1 - signs_company_petition_T1
+delta_intention_company_petition_T2 <- sum(data_T2$petition_company_block)/n_T2 - signs_company_petition_T2
+delta_intention_company_petition_T3 <- sum(data_T3$petition_company_block)/n_T3 - signs_company_petition_T3
+
+print(delta_intention_company_petition_C)
+print(delta_intention_company_petition_T1)
+print(delta_intention_company_petition_T2)
+print(delta_intention_company_petition_T3)
+print("---------------------------")
+```
+
+### Clicks:
+```{r}
+clicks_company_petition <- sum(data$petition_clicks_company_block)/nrow(data)
+print(clicks_company_petition)
+
+clicks_company_petition_C <- sum(data_C$petition_clicks_company_block)/n_C
+clicks_company_petition_T1 <- sum(data_T1$petition_clicks_company_block)/n_T1
+clicks_company_petition_T2 <- sum(data_T2$petition_clicks_company_block)/n_T2
+clicks_company_petition_T3 <- sum(data_T3$petition_clicks_company_block)/n_T3
+
+print(clicks_company_petition_C)
+print(clicks_company_petition_T1)
+print(clicks_company_petition_T2)
+print(clicks_company_petition_T3)
+print("---------------------------")
+```
+
+## Clicks  - Delta:
+```{r}
+delta_clicks_company_petition_C <- sum(data_C$petition_clicks_company_block)/n_C - signs_company_petition_C
+delta_clicks_company_petition_T1 <- sum(data_T1$petition_clicks_company_block)/n_T1 - signs_company_petition_T1
+delta_clicks_company_petition_T2 <- sum(data_T2$petition_clicks_company_block)/n_T2 - signs_company_petition_T2
+delta_clicks_company_petition_T3 <- sum(data_T3$petition_clicks_company_block)/n_T3 - signs_company_petition_T3
+
+print(delta_clicks_company_petition_C)
+print(delta_clicks_company_petition_T1)
+print(delta_clicks_company_petition_T2)
+print(delta_clicks_company_petition_T3)
+print("---------------------------")
+```
+
+
+
+
+## Self-reported signatures:
+```{r}
+self_reported_company_petition_C <- sum(data_C$petition_self_reported_company_block)/n_C
+self_reported_company_petition_T1 <- sum(data_T1$petition_self_reported_company_block)/n_T1
+self_reported_company_petition_T2 <- sum(data_T2$petition_self_reported_company_block)/n_T2
+self_reported_company_petition_T3 <- sum(data_T3$petition_self_reported_company_block)/n_T3
+
+print(self_reported_company_petition_C)
+print(self_reported_company_petition_T1)
+print(self_reported_company_petition_T2)
+print(self_reported_company_petition_T3)
+print("---------------------------")
+```
+
+## Self-reported signatures - Delta:
+```{r}
+delta_self_reported_company_petition_C <- sum(data_C$petition_self_reported_company_block)/n_C - signs_company_petition_C
+delta_self_reported_company_petition_T1 <- sum(data_T1$petition_self_reported_company_block)/n_T1 - signs_company_petition_T1
+delta_self_reported_company_petition_T2 <- sum(data_T2$petition_self_reported_company_block)/n_T2 - signs_company_petition_T2
+delta_self_reported_company_petition_T3 <- sum(data_T3$petition_self_reported_company_block)/n_T3 - signs_company_petition_T3
+
+print(delta_self_reported_company_petition_C)
+print(delta_self_reported_company_petition_T1)
+print(delta_self_reported_company_petition_T2)
+print(delta_self_reported_company_petition_T3)
+print("---------------------------")
+```
+
+
+
+
+
+
+### PLATFORM BLOCK ########################################################################################################
+
+
+
+## Intention to sign - Delta:
+```{r}
+print(sum(data_C$petition_platform_block)/n_C)
+delta_intention_platform_petition_C <- sum(data_C$petition_platform_block)/n_C - signs_platforms_petition_C
+delta_intention_platform_petition_T1 <- sum(data_T1$petition_platform_block)/n_T1 - signs_platforms_petition_T1
+delta_intention_platform_petition_T2 <- sum(data_T2$petition_platform_block)/n_T2 - signs_platforms_petition_T2
+delta_intention_platform_petition_T3 <- sum(data_T3$petition_platform_block)/n_T3 - signs_platforms_petition_T3
+
+print(delta_intention_platform_petition_C)
+print(delta_intention_platform_petition_T1)
+print(delta_intention_platform_petition_T2)
+print(delta_intention_platform_petition_T3)
+print("---------------------------")
+```
+
+## Clicks  - Delta:
+```{r}
+print(sum(data_C$petition_clicks_platform_block)/n_C)
+delta_clicks_platform_petition_C <- sum(data_C$petition_clicks_platform_block)/n_C - signs_platforms_petition_C
+delta_clicks_platform_petition_T1 <- sum(data_T1$petition_clicks_platform_block)/n_T1 - signs_platforms_petition_T1
+delta_clicks_platform_petition_T2 <- sum(data_T2$petition_clicks_platform_block)/n_T2 - signs_platforms_petition_T2
+delta_clicks_platform_petition_T3 <- sum(data_T3$petition_clicks_platform_block)/n_T3 - signs_platforms_petition_T3
+
+print(delta_clicks_platform_petition_C)
+print(delta_clicks_platform_petition_T1)
+print(delta_clicks_platform_petition_T2)
+print(delta_clicks_platform_petition_T3)
+print("---------------------------")
+```
+
+
+## Self-reported signatures - Delta:
+```{r}
+print(sum(data_C$petition_self_reported_platform_block)/n_C)
+delta_self_reported_platform_petition_C <- sum(data_C$petition_self_reported_platform_block)/n_C - signs_platforms_petition_C
+delta_self_reported_platform_petition_T1 <- sum(data_T1$petition_self_reported_platform_block)/n_T1 - signs_platforms_petition_T1
+delta_self_reported_platform_petition_T2 <- sum(data_T2$petition_self_reported_platform_block)/n_T2 - signs_platforms_petition_T2
+delta_self_reported_platform_petition_T3 <- sum(data_T3$petition_self_reported_platform_block)/n_T3 - signs_platforms_petition_T3
+
+print(delta_self_reported_platform_petition_C)
+print(delta_self_reported_platform_petition_T1)
+print(delta_self_reported_platform_petition_T2)
+print(delta_self_reported_platform_petition_T3)
+print("---------------------------")
+```
+                                     
+
+                                               
+```{r}
+delta_with_signatures <-  data.frame(group = c("Control", 
+                                               "Company \n (T1)", 
+                                               "Platform \n (T2)",  
+                                               "Company + Platform \n (T3)",
+                                               "Control", 
+                                               "Company \n (T1)", 
+                                               "Platform \n (T2)",  
+                                               "Company + Platform \n (T3)", 
+                                               
+                                               "Control", 
+                                               "Company \n (T1)", 
+                                               "Platform \n (T2)",  
+                                               "Company + Platform \n (T3)",
+                                               "Control", 
+                                               "Company \n (T1)", 
+                                               "Platform \n (T2)",  
+                                               "Company + Platform \n (T3)", 
+                                               
+                                               "Control", 
+                                               "Company \n (T1)", 
+                                               "Platform \n (T2)",  
+                                               "Company + Platform \n (T3)",
+                                               "Control", 
+                                               "Company \n (T1)", 
+                                               "Platform \n (T2)",  
+                                               "Company + Platform \n (T3)"), 
+                                     
+                                    delta_intention = c(delta_intention_platform_petition_C,
+                                                         delta_intention_platform_petition_T1,
+                                                         delta_intention_platform_petition_T2,
+                                                         delta_intention_platform_petition_T3,
+                                                         
+                                                         delta_intention_company_petition_C, 
+                                                         delta_intention_company_petition_T1, 
+                                                         delta_intention_company_petition_T2, 
+                                                         delta_intention_company_petition_T3),
+                                     
+                                     delta_clicks = c(delta_clicks_platform_petition_C, 
+                                                      delta_clicks_platform_petition_T1, 
+                                                      delta_clicks_platform_petition_T2,
+                                                      delta_clicks_platform_petition_T3, 
+                                                      
+                                                      delta_clicks_company_petition_C, 
+                                                      delta_clicks_company_petition_T1, 
+                                                      delta_clicks_company_petition_T2,
+                                                      delta_clicks_company_petition_T3),
+                                     
+                                     delta_self_reported = c(delta_self_reported_platform_petition_C,
+                                                             delta_self_reported_platform_petition_T1, 
+                                                             delta_self_reported_platform_petition_T2,
+                                                             delta_self_reported_platform_petition_T3,
+                                                             
+                                                             delta_self_reported_company_petition_C,
+                                                             delta_self_reported_company_petition_T1,
+                                                             delta_self_reported_company_petition_T2,
+                                                             delta_self_reported_company_petition_T3),
+                                     
+                                     outcome_2_text = c("Platform block", "Platform block", 
+                                                        "Platform block", "Platform block", 
+                                                        "Company block", "Company block", 
+                                                        "Company block", "Company block", 
+                                                        
+                                                        "Platform block", "Platform block", 
+                                                        "Platform block", "Platform block", 
+                                                        "Company block", "Company block", 
+                                                        "Company block", "Company block", 
+                                                        
+                                                        "Platform block", "Platform block", 
+                                                        "Platform block", "Platform block", 
+                                                        "Company block", "Company block", 
+                                                        "Company block", "Company block"))
+```
+
+
+
+```{r}
+# Define the desired order for the "group" variable
+group_order <- c("Control", "Company \n (T1)", "Platform \n (T2)", "Company + Platform \n (T3)")
+
+# Define the desired order for the "Outcome" variable
+outcome_order <- c("delta_intention", "delta_clicks", "delta_self_reported")
+
+# Create a new data frame by combining delta_clicks and delta_self_reported
+combined_data <- delta_with_signatures %>%
+  pivot_longer(cols = c(delta_intention, delta_clicks, delta_self_reported), names_to = "Outcome") %>%
+  mutate(group = factor(group, levels = group_order), 
+         Outcome = factor(Outcome, levels = outcome_order))
+
+# Create a grouped bar plot with facets
+p <- ggplot(combined_data, aes(x = group, fill = Outcome)) +
+  geom_bar(aes(y = value), position = "dodge", stat = "identity", width = 0.7) +
+  labs(
+    x = "Group",
+    y = "Delta Value",
+    fill = "Outcome"
+  ) +
+  ggtitle("Grouped Bar Plot of Delta Values by Group and Outcome") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, face = "bold"), 
+        strip.text = element_text(face = "bold")) +
+  facet_wrap(~ outcome_2_text, ncol = 2) + 
+  scale_fill_manual(values = c("delta_intention" = "#00CCFF", 
+                               "delta_clicks" = "#00CC66", 
+                               "delta_self_reported" = "#FF9966"),
+                    # CCCC33, 99CCFF
+                    labels = c("delta_clicks" = "delta clicks", 
+                               "delta_self_reported" = "delta self-reported", 
+                               "delta_intention" = "delta intention"))
+
+# Show the plot
+print(p)
+```
+
