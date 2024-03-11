@@ -1,0 +1,190 @@
+---
+title: "main_analysis"
+author: "Wajeeha Ahmad"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list=ls())
+```
+
+
+```{r include=FALSE}
+# load package
+library(psych)
+library(qwraps2)
+library(DescTools)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+library(sandwich)
+library(kableExtra)
+library(dplyr)
+library(ggplot2)
+library(magrittr)
+library(tidyr)
+library(stargazer)
+library(jtools)
+library(lmtest)
+library(tidyverse)
+library(haven)
+library(modelsummary)
+```
+
+
+# Loading the data set:
+```{r}
+main_data <- read.csv("consumer_survey_data.csv", head = TRUE, sep = ",")
+main_data$frequent_user <- ifelse(main_data$freq_of_use_top_choice < 3, 1, 0)
+data_switched_df <- main_data[main_data$switch_in_preference == 1, ]
+```
+
+
+```{r}
+data_switched_C <- data_switched_df[data_switched_df$control_group == 1, ]
+n_switched_C <- nrow(data_switched_C)
+
+data_C <- main_data[main_data$control_group == 1, ]
+n_C <- nrow(data_C)
+
+data_T1 <- main_data[main_data$T1_group == 1, ]
+n_T1 <- nrow(data_T1)
+
+data_T2 <- main_data[main_data$T2_group == 1, ]
+n_T2 <- nrow(data_T2)
+
+data_T3 <- main_data[main_data$T3_group == 1, ]
+n_T3 <- nrow(data_T3)
+
+data_T4 <- main_data[main_data$T4_group == 1, ]
+n_T4 <- nrow(data_T4)
+
+print(n_C)
+print(n_T1)
+print(n_T2)
+print(n_T3)
+print(n_T4)
+```
+
+# Constructing the pooled company treatment group
+
+```{r}
+main_data$pooled_company_T <- ifelse(((main_data$group == "T1")|
+                                      (main_data$group == "T3")|
+                                      (main_data$group == "T4")), 1, 0)
+sum(main_data$pooled_company_T)
+
+
+pooled_C <- main_data[main_data$pooled_company_T == 0, ]
+n_C <- nrow(pooled_C)
+n_C
+
+mean(pooled_C$switch_in_preference)
+mean(pooled_C$petition_clicks_company_block)
+```
+
+
+```{r}
+control_set = ~. + factor(age) + gender_female + factor(residence) + factor(race) + vote_biden + 
+                 factor(education) + factor(employment) + factor(household_income) + 
+                 factor(news_sources) + news_media_trust_low + factor(num_platforms_used) + 
+                 petition_signer + consumes_misinfo + factor(top_ranked_choice) + frequent_user
+```
+
+
+
+```{r}
+mean(main_data$weights_difference)
+median(main_data$weights_difference)
+```
+
+
+```{r}
+main_data$weight_diff_more_than_median <- ifelse((main_data$weights_difference) > median(main_data$weights_difference), 
+                                                 1, 0)
+sum(main_data$weight_diff_more_than_median)
+
+main_data$weight_diff_more_than_mean <- ifelse((main_data$weights_difference) > mean(main_data$weights_difference), 1, 0)
+sum(main_data$weight_diff_more_than_mean)
+```
+
+
+
+```{r}
+mean(main_data$weights_difference)
+changed_preference_reg <- lm(switch_in_preference ~ pooled_company_T + 
+                                                    pooled_company_T*weights_difference,
+                             data = main_data)
+tab_model(changed_preference_reg) 
+
+weight_coeftest <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+weight_coeftest   
+```
+
+
+```{r}
+changed_preference_reg <- lm(update(switch_in_preference ~ pooled_company_T + pooled_company_T*weights_difference, 
+                                    control_set), data = main_data)
+tab_model(changed_preference_reg) 
+
+weight_coeftest_c <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+weight_coeftest_c 
+```
+
+
+```{r}
+mean(main_data$weights_difference)
+changed_preference_reg <- lm(switch_in_preference ~ pooled_company_T + 
+                                                    pooled_company_T * weight_diff_more_than_mean,
+                             data = main_data)
+tab_model(changed_preference_reg) 
+
+weight_coeftest_mean <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+weight_coeftest_mean   
+```
+
+
+```{r}
+changed_preference_reg <- lm(update(switch_in_preference ~ pooled_company_T + 
+                                    pooled_company_T*weight_diff_more_than_mean, 
+                                    control_set), data = main_data)
+tab_model(changed_preference_reg) 
+
+weight_coeftest_mean_c <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+weight_coeftest_mean_c 
+```
+
+
+```{r}
+mean(main_data$weights_difference)
+changed_preference_reg <- lm(switch_in_preference ~ pooled_company_T + 
+                                                    pooled_company_T * weight_diff_more_than_median,
+                             data = main_data)
+tab_model(changed_preference_reg) 
+
+weight_coeftest_median <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+weight_coeftest_median   
+```
+
+
+```{r}
+changed_preference_reg <- lm(update(switch_in_preference ~ pooled_company_T + 
+                                    pooled_company_T*weight_diff_more_than_median, 
+                                    control_set), data = main_data)
+tab_model(changed_preference_reg) 
+
+weight_coeftest_median_c <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+weight_coeftest_median_c 
+```
+
+
+```{r}
+library("texreg")
+
+texreg(list(weight_coeftest_c, weight_coeftest_mean_c, weight_coeftest_median_c), 
+       stars = c(0.01, 0.05, 0.1))
+```
+
+
+
