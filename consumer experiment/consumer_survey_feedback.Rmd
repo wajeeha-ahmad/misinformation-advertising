@@ -1,0 +1,79 @@
+---
+title: "consumer_survey_feedback"
+author: "Wajeeha Ahmad"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list=ls())
+```
+
+
+```{r include=FALSE}
+# load package
+library(psych)
+library(qwraps2)
+library(DescTools)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+library(kableExtra)
+library(dplyr)
+library(ggplot2)
+library(magrittr)
+library(tidyr)
+library(stargazer)
+library(jtools)
+library(tidyverse)
+library(haven)
+library(stringr)
+library(modelsummary)
+```
+
+
+Loading the data sets:
+```{r}
+survey_trust <- read.csv("survey_trust.csv")
+survey_bias <- read.csv("survey_bias.csv")
+```
+
+
+```{r fig.align="center", echo = FALSE,fig.width = 9}
+responses <- c("Strongly disagree", "Disagree", "Somewhat disagree", "Neither", "Somewhat agree",
+               "Agree", "Strongly agree")
+survey_trust$group <- factor(survey_trust$group, levels = responses) 
+
+survey_trust_plot <- ggplot(data = survey_trust, aes(x = group, y = fraction)) + 
+                                geom_bar(stat = "identity", fill = "darkgrey") +
+                                scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) + 
+                                coord_cartesian(ylim = c(0, 0.35)) + 
+                                theme_bw() +
+                                theme(axis.text.x = element_text(face="bold", size = 15),
+                                      plot.title = element_text(hjust = 0.5, size = 15),
+                                      axis.text.y = element_text(face="bold", size = 15)) + labs(x = "", y = "")
+
+survey_trust_plot + ggtitle("Respondents' degree of agreement with survey information being trustworthy")
+```
+
+
+
+
+```{r fig.align="center", echo = FALSE,fig.width = 9}
+responses <- c("Very right-wing", "Right-wing", "Slightly right-wing", "Not biased", 
+               "Slightly left-wing", "Left-wing", "Very left-wing")
+survey_bias$group <- factor(survey_bias$group, levels = rev(responses)) 
+
+survey_bias_plot <- ggplot(data = survey_bias, aes(x = group, y = fraction)) + 
+                                geom_bar(stat = "identity", fill = "darkgrey") + 
+                                scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
+                                coord_cartesian(ylim = c(0, 0.85)) +  
+                                theme_bw() +
+                                theme(axis.text.x = element_text(face="bold", size = 15),
+                                      plot.title = element_text(hjust = 0.5, size = 15),
+                                      axis.text.y = element_text(face="bold", size = 15)) + labs(x = "", y = "")
+
+survey_bias_plot + ggtitle("Respondents' perceived degree of bias in survey information")
+```
+
+
