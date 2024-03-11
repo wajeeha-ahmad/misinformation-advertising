@@ -1,0 +1,311 @@
+---
+title: "stated_vs_revealed_preferences"
+author: "Wajeeha Ahmad"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list=ls())
+```
+
+
+```{r include=FALSE}
+# load package
+library(psych)
+library(qwraps2)
+library(DescTools)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+
+library(kableExtra)
+library(dplyr)
+library(ggplot2)
+library(magrittr)
+library(tidyr)
+library(stargazer)
+library(jtools)
+
+library(tidyverse)
+library(haven)
+library(modelsummary)
+```
+
+
+Loading the data set:
+```{r}
+data <- read.csv("consumer_survey_data.csv", head = TRUE, sep = ",")
+```
+
+
+```{r}
+# Agree or strongly agree:
+data$misinfo_attitudes_companies_agree <- ifelse(data$misinfo_attitudes_companies > 5, 1, 0)
+data$misinfo_attitudes_platforms_agree <- ifelse(data$misinfo_attitudes_platforms > 5, 1, 0)
+```
+
+
+```{r}
+data_C <- data[data$group == "control", ]
+n_C <- nrow(data_C)
+
+data_T1 <- data[data$group == "T1", ]
+n_T1 <- nrow(data_T1)
+
+data_T2 <- data[data$group == "T2", ]
+n_T2 <- nrow(data_T2)
+
+data_T3 <- data[data$group == "T3", ]
+n_T3 <- nrow(data_T3)
+
+data_T4 <- data[data$group == "T4", ]
+n_T4 <- nrow(data_T4)
+
+print(n_C)
+print(n_T1)
+print(n_T2)
+print(n_T3)
+print(n_T4)
+```
+
+
+
+### Main outcome: Barplots of Outcome 1
+
+
+## Switch in preferences
+
+```{r}
+changed_preferences_frac <- mean(data$switch_in_preference)
+print(changed_preferences_frac)
+
+changed_preferences_T1_frac <- mean(data_T1$switch_in_preference)
+changed_preferences_T2_frac <- mean(data_T2$switch_in_preference)
+changed_preferences_T3_frac <- mean(data_T3$switch_in_preference)
+changed_preferences_T4_frac <- mean(data_T4$switch_in_preference)
+changed_preferences_C_frac <- mean(data_C$switch_in_preference)
+
+print(changed_preferences_T1_frac)
+print(changed_preferences_T2_frac)
+print(changed_preferences_T3_frac)
+print(changed_preferences_T4_frac)
+print(changed_preferences_C_frac)
+
+print("------------")
+
+changed_preferences_T1_frac_se <- sd(data_T1$switch_in_preference)/sqrt(n_T1)
+changed_preferences_T2_frac_se <- sd(data_T2$switch_in_preference)/sqrt(n_T2)
+changed_preferences_T3_frac_se <- sd(data_T3$switch_in_preference)/sqrt(n_T3)
+changed_preferences_T4_frac_se <- sd(data_T4$switch_in_preference)/sqrt(n_T4)
+changed_preferences_C_frac_se <- sd(data_C$switch_in_preference)/sqrt(n_C)
+
+print(changed_preferences_T1_frac_se)
+print(changed_preferences_T2_frac_se)
+print(changed_preferences_T3_frac_se)
+print(changed_preferences_T4_frac_se)
+print(changed_preferences_C_frac_se)
+```
+
+
+# Stated preferences about companies
+
+```{r}
+stated_preferences_T1_frac <- mean(data_T1$misinfo_attitudes_companies_agree)
+stated_preferences_T2_frac <- mean(data_T2$misinfo_attitudes_companies_agree)
+stated_preferences_T3_frac <- mean(data_T3$misinfo_attitudes_companies_agree)
+stated_preferences_T4_frac <- mean(data_T4$misinfo_attitudes_companies_agree)
+stated_preferences_C_frac <- mean(data_C$misinfo_attitudes_companies_agree)
+
+print(stated_preferences_T1_frac)
+print(stated_preferences_T2_frac)
+print(stated_preferences_T3_frac)
+print(stated_preferences_T4_frac)
+print(stated_preferences_C_frac)
+
+print("------------")
+
+stated_preferences_T1_frac_se <- sd(data_T1$misinfo_attitudes_companies_agree)/sqrt(n_T1)
+stated_preferences_T2_frac_se <- sd(data_T2$misinfo_attitudes_companies_agree)/sqrt(n_T2)
+stated_preferences_T3_frac_se <- sd(data_T3$misinfo_attitudes_companies_agree)/sqrt(n_T3)
+stated_preferences_T4_frac_se <- sd(data_T4$misinfo_attitudes_companies_agree)/sqrt(n_T4)
+stated_preferences_C_frac_se <- sd(data_C$misinfo_attitudes_companies_agree)/sqrt(n_C)
+
+print(stated_preferences_T1_frac_se)
+print(stated_preferences_T2_frac_se)
+print(stated_preferences_T3_frac_se)
+print(stated_preferences_T4_frac_se)
+print(stated_preferences_C_frac_se)
+```
+
+
+
+
+```{r}
+revealed_stated_preferences_exit <- data.frame(group = c("Control", "Company \n (T1)", "Platform \n (T2)", 
+                                                    "Company + Platform \n (T3)", "Company ranking \n (T4)", 
+                                                    "Control", "Company \n (T1)", "Platform \n (T2)", 
+                                                    "Company + Platform \n (T3)", "Company ranking \n (T4)"), 
+                                          fraction = c(stated_preferences_C_frac, 
+                                                       stated_preferences_T1_frac,
+                                                       stated_preferences_T2_frac,
+                                                       stated_preferences_T3_frac,
+                                                       stated_preferences_T4_frac, 
+                                                       changed_preferences_C_frac, 
+                                                       changed_preferences_T1_frac,
+                                                       changed_preferences_T2_frac, 
+                                                       changed_preferences_T3_frac,
+                                                       changed_preferences_T4_frac), 
+                                          se = c(stated_preferences_C_frac_se, 
+                                                 stated_preferences_T1_frac_se, 
+                                                 stated_preferences_T2_frac_se, 
+                                                 stated_preferences_T3_frac_se, 
+                                                 stated_preferences_T4_frac_se, 
+                                                 changed_preferences_C_frac_se, 
+                                                 changed_preferences_T1_frac_se, 
+                                                 changed_preferences_T2_frac_se, 
+                                                 changed_preferences_T3_frac_se, 
+                                                 changed_preferences_T4_frac_se),
+                                          type = c("Stated", "Stated", "Stated", "Stated", "Stated", 
+                                                   "Revealed", "Revealed", "Revealed", "Revealed", "Revealed"))
+```
+
+
+```{r fig.height = 5, fig.width = 9, fig.align = "center"}
+positions <- c("Control", "Company \n (T1)", "Platform \n (T2)", "Company + Platform \n (T3)", "Company ranking \n (T4)")
+
+revealed_stated_preferences_plot <- ggplot(data = revealed_stated_preferences_exit, aes(x = group, fill = type)) +
+                              geom_bar(aes(y = fraction), stat="identity", position = "identity") +
+                              #geom_bar(aes(y = revealed), stat="identity", position = "dodge", fill = "deepskyblue") +
+                              geom_errorbar(aes(x=group, ymin = fraction - 1.96*se, ymax = fraction + 1.96*se), 
+                                            width = 0.1, colour="black", alpha = 0.9, size = 0.3) +
+                              coord_cartesian(ylim = c(0, 1.0)) + 
+  theme(axis.text.x = element_text(face="bold", size = 11),
+        axis.text.y = element_text(face="bold", size = 11), 
+        #legend.position = c(0.94, 0.94), legend.direction="vertical",
+        legend.position = c(0.89, 0.96), legend.direction = "horizontal",
+        legend.key = element_rect(colour = "transparent", fill = "transparent")) + # legend.title=element_blank()
+  scale_x_discrete(limits = positions) +  
+  labs(x = "", y = "") + scale_fill_manual(name = NULL, values = c("Stated" = "lightblue", "Revealed" = "deepskyblue"))
+
+revealed_stated_preferences_plot + ggtitle("Switch in product choice vs stated preferences (companies)")
+```
+
+
+### Clicks on petition links
+
+
+```{r}
+# Platform petitions:
+
+platform_petition_T1 <- mean(data_T1$petition_clicks_platform_block)
+platform_petition_T2 <- mean(data_T2$petition_clicks_platform_block)
+platform_petition_T3 <- mean(data_T3$petition_clicks_platform_block)
+platform_petition_T4 <- mean(data_T4$petition_clicks_platform_block)
+platform_petition_C <- mean(data_C$petition_clicks_platform_block)
+
+print(platform_petition_T1)
+print(platform_petition_T2)
+print(platform_petition_T3)
+print(platform_petition_T4)
+print(platform_petition_C)
+
+
+print("------------")
+
+changed_preferences_T1_frac_se <- sd(data_T1$petition_clicks_platform_block)/sqrt(n_T1)
+changed_preferences_T2_frac_se <- sd(data_T2$petition_clicks_platform_block)/sqrt(n_T2)
+changed_preferences_T3_frac_se <- sd(data_T3$petition_clicks_platform_block)/sqrt(n_T3)
+changed_preferences_T4_frac_se <- sd(data_T4$petition_clicks_platform_block)/sqrt(n_T4)
+changed_preferences_C_frac_se <- sd(data_C$petition_clicks_platform_block)/sqrt(n_C)
+
+print(changed_preferences_T1_frac_se)
+print(changed_preferences_T2_frac_se)
+print(changed_preferences_T3_frac_se)
+print(changed_preferences_T4_frac_se)
+print(changed_preferences_C_frac_se)
+```
+
+
+```{r}
+stated_preferences_T1_frac <- mean(data_T1$misinfo_attitudes_platforms_agree)
+stated_preferences_T2_frac <- mean(data_T2$misinfo_attitudes_platforms_agree)
+stated_preferences_T3_frac <- mean(data_T3$misinfo_attitudes_platforms_agree)
+stated_preferences_T4_frac <- mean(data_T4$misinfo_attitudes_platforms_agree)
+stated_preferences_C_frac <- mean(data_C$misinfo_attitudes_platforms_agree)
+
+print(stated_preferences_T1_frac)
+print(stated_preferences_T2_frac)
+print(stated_preferences_T3_frac)
+print(stated_preferences_T4_frac)
+print(stated_preferences_C_frac)
+
+print("------------")
+
+stated_preferences_T1_frac_se <- sd(data_T1$misinfo_attitudes_platforms_agree)/sqrt(n_T1)
+stated_preferences_T2_frac_se <- sd(data_T2$misinfo_attitudes_platforms_agree)/sqrt(n_T2)
+stated_preferences_T3_frac_se <- sd(data_T3$misinfo_attitudes_platforms_agree)/sqrt(n_T3)
+stated_preferences_T4_frac_se <- sd(data_T4$misinfo_attitudes_platforms_agree)/sqrt(n_T4)
+stated_preferences_C_frac_se <- sd(data_C$misinfo_attitudes_platforms_agree)/sqrt(n_C)
+
+print(stated_preferences_T1_frac_se)
+print(stated_preferences_T2_frac_se)
+print(stated_preferences_T3_frac_se)
+print(stated_preferences_T4_frac_se)
+print(stated_preferences_C_frac_se)
+```
+
+
+
+```{r}
+revealed_stated_preferences_voice <- data.frame(group = c("Control", "Company \n (T1)", "Platform \n (T2)", 
+                                                    "Company + Platform \n (T3)", "Company ranking \n (T4)", 
+                                                    "Control", "Company \n (T1)", "Platform \n (T2)", 
+                                                    "Company + Platform \n (T3)", "Company ranking \n (T4)"), 
+                                          fraction = c(stated_preferences_C_frac, 
+                                                       stated_preferences_T1_frac,
+                                                       stated_preferences_T2_frac,
+                                                       stated_preferences_T3_frac,
+                                                       stated_preferences_T4_frac, 
+                                                       platform_petition_C, 
+                                                       platform_petition_T1,
+                                                       platform_petition_T2, 
+                                                       platform_petition_T3,
+                                                       platform_petition_T4), 
+                                          se = c(stated_preferences_C_frac_se, 
+                                                 stated_preferences_T1_frac_se, 
+                                                 stated_preferences_T2_frac_se, 
+                                                 stated_preferences_T3_frac_se, 
+                                                 stated_preferences_T4_frac_se, 
+                                                 changed_preferences_C_frac_se, 
+                                                 changed_preferences_T1_frac_se, 
+                                                 changed_preferences_T2_frac_se, 
+                                                 changed_preferences_T3_frac_se, 
+                                                 changed_preferences_T4_frac_se),
+                                          type = c("Stated", "Stated", "Stated", "Stated", "Stated", 
+                                                   "Revealed", "Revealed", "Revealed", "Revealed", "Revealed"))
+```
+
+
+
+
+```{r fig.height = 5, fig.width = 9, fig.align = "center"}
+positions <- c("Control", "Company \n (T1)", "Platform \n (T2)", "Company + Platform \n (T3)", "Company ranking \n (T4)")
+
+revealed_stated_preferences_plot <- ggplot(data = revealed_stated_preferences_voice, aes(x = group, fill = type)) +
+                              geom_bar(aes(y = fraction), stat="identity", position = "identity") +
+                              #geom_bar(aes(y = revealed), stat="identity", position = "dodge", fill = "deepskyblue") +
+                              geom_errorbar(aes(x=group, ymin = fraction - 1.96*se, ymax = fraction + 1.96*se), 
+                                            width = 0.1, colour="black", alpha = 0.9, size = 0.3) +
+                              coord_cartesian(ylim = c(0, 1.0)) + 
+  theme(axis.text.x = element_text(face="bold", size = 11),
+        axis.text.y = element_text(face="bold", size = 11), 
+        #legend.position = c(0.94, 0.94), legend.direction="vertical",
+        legend.position = c(0.89, 0.96), legend.direction = "horizontal",
+        legend.key = element_rect(colour = "transparent", fill = "transparent")) + # legend.title=element_blank()
+  scale_x_discrete(limits = positions) +  
+  labs(x = "", y = "") + scale_fill_manual(name = NULL, values = c("Stated" = "#F4A584", "Revealed" = "#E66101"))
+
+revealed_stated_preferences_plot + ggtitle("Petition clicks vs stated preferences (platforms)")
+```
+
