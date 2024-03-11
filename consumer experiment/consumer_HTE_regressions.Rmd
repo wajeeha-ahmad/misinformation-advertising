@@ -1,0 +1,204 @@
+---
+title: "consumer_HTE"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list=ls())
+```
+
+
+```{r setup, include=FALSE}
+#install.packages("lmtest")
+#install.packages("sandwich")
+```
+
+
+# Loading packages:
+```{r include=FALSE}
+library(psych)
+library(qwraps2)
+library(DescTools)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+library(dplyr)
+library(ggplot2)
+library(magrittr)
+library(tidyr)
+library(lmtest)
+library(sandwich)
+library(jtools)
+library(tidyverse)
+library(haven)
+library(modelsummary)
+require(foreign)
+require(MASS)
+require(Hmisc)
+require(reshape2)
+```
+
+
+# Loading the data set:
+```{r}
+main_data <- read.csv("consumer_survey_data.csv", head = TRUE, sep = ",")
+main_data$frequent_user <- ifelse(main_data$freq_of_use_top_choice < 3, 1, 0)
+```
+
+
+```{r}
+data_C <- main_data[main_data$control_group == 1, ]
+n_C <- nrow(data_C)
+
+data_T1 <- main_data[main_data$T1_group == 1, ]
+n_T1 <- nrow(data_T1)
+
+data_T2 <- main_data[main_data$T2_group == 1, ]
+n_T2 <- nrow(data_T2)
+
+data_T3 <- main_data[main_data$T3_group == 1, ]
+n_T3 <- nrow(data_T3)
+
+data_T4 <- main_data[main_data$T4_group == 1, ]
+n_T4 <- nrow(data_T4)
+
+print(n_C)
+print(n_T1)
+print(n_T2)
+print(n_T3)
+print(n_T4)
+```
+
+```{r}
+control_set = ~. + factor(age) + gender_female + factor(residence) + factor(race) + vote_biden + 
+                 factor(education) + factor(employment) + factor(household_income) + 
+                 factor(news_sources) + news_media_trust_low + factor(num_platforms_used) + 
+                 petition_signer + consumes_misinfo + factor(top_ranked_choice) + frequent_user
+```
+
+# Constructing the pooled company treatment group
+
+```{r}
+main_data$pooled_company_T <- ifelse(((main_data$group == "T1")|
+                                      (main_data$group == "T3")|
+                                      (main_data$group == "T4")), 1, 0)
+sum(main_data$pooled_company_T)
+
+
+pooled_C <- main_data[main_data$pooled_company_T == 0, ]
+n_C <- nrow(pooled_C)
+n_C
+
+mean(pooled_C$switch_in_preference)
+mean(pooled_C$petition_clicks_company_block)
+```
+
+
+# Exit HTE
+
+```{r}
+changed_preference_reg <- lm(update(switch_in_preference ~ pooled_company_T + pooled_company_T*gender_female, 
+                                    control_set), data = main_data)
+tab_model(changed_preference_reg) 
+
+exit_gender_female_coeftest <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+exit_gender_female_coeftest  
+```
+
+```{r}
+changed_preference_reg <- lm(update(switch_in_preference ~ pooled_company_T + pooled_company_T*vote_biden, control_set), 
+                             data = main_data)
+tab_model(changed_preference_reg) 
+
+exit_vote_biden_coeftest <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+exit_vote_biden_coeftest  
+```
+
+```{r}
+changed_preference_reg <- lm(update(switch_in_preference ~ pooled_company_T + pooled_company_T*frequent_user, 
+                                    control_set), data = main_data)
+tab_model(changed_preference_reg) 
+
+exit_frequent_user_coeftest <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+exit_frequent_user_coeftest   
+```
+
+
+```{r}
+changed_preference_reg <- lm(update(switch_in_preference ~ pooled_company_T + pooled_company_T*consumes_misinfo,
+                                    control_set), data = main_data)
+tab_model(changed_preference_reg) 
+
+exit_consumes_misinfo_coeftest <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+exit_consumes_misinfo_coeftest   
+```
+
+
+# Voice (company block petition) HTE
+
+```{r}
+changed_preference_reg <- lm(update(petition_clicks_company_block ~ pooled_company_T + pooled_company_T*gender_female, 
+                                    control_set), data = main_data)
+tab_model(changed_preference_reg) 
+
+voice_company_block_female_coeftest <- coeftest(changed_preference_reg, 
+                                                vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+voice_company_block_female_coeftest  
+```
+
+
+```{r}
+changed_preference_reg <- lm(update(petition_clicks_company_block ~ pooled_company_T + pooled_company_T*vote_biden, 
+                                    control_set), data = main_data)
+tab_model(changed_preference_reg) 
+
+voice_company_block_biden_coeftest <- coeftest(changed_preference_reg, 
+                                               vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+voice_company_block_biden_coeftest  
+```
+
+
+
+```{r}
+changed_preference_reg <- lm(update(petition_clicks_company_block ~ pooled_company_T + pooled_company_T*frequent_user, 
+                                    control_set), data = main_data)
+tab_model(changed_preference_reg) 
+
+voice_company_block_frequent_user_coeftest <- coeftest(changed_preference_reg, vcov = 
+                                                     vcovHC(changed_preference_reg, type = 'HC1'))
+voice_company_block_frequent_user_coeftest   
+```
+
+
+
+```{r}
+changed_preference_reg <- lm(update(petition_clicks_company_block ~ pooled_company_T + pooled_company_T*consumes_misinfo, 
+                                    control_set), data = main_data)
+tab_model(changed_preference_reg) 
+
+voice_company_block_consumes_misinfo_coeftest <- coeftest(changed_preference_reg, 
+                                                      vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+voice_company_block_consumes_misinfo_coeftest   
+```
+
+
+
+
+```{r}
+library("texreg")
+texreg(list(exit_gender_female_coeftest, 
+            exit_vote_biden_coeftest, 
+            exit_frequent_user_coeftest, 
+            exit_consumes_misinfo_coeftest,
+            voice_company_block_female_coeftest,
+            voice_company_block_biden_coeftest,
+            voice_company_block_frequent_user_coeftest,
+            voice_company_block_consumes_misinfo_coeftest), 
+       stars = c(0.01, 0.05, 0.1))
+```
+
+
+
+
+
