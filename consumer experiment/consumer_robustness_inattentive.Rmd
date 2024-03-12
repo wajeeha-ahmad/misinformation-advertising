@@ -1,0 +1,253 @@
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list=ls())
+```
+
+# Loading packages:
+```{r include=FALSE}
+library(psych)
+library(qwraps2)
+library(DescTools)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+library(dplyr)
+library(ggplot2)
+library(magrittr)
+library(tidyr)
+library(jtools)
+library(tidyverse)
+library(haven)
+library(lmtest)
+library(sandwich)
+library(modelsummary)
+require(foreign)
+require(MASS)
+require(Hmisc)
+require(reshape2)
+```
+
+
+# Loading the data set:
+```{r}
+inattentive_data <- read.csv("consumer_survey_data_including_inattentive.csv", head = TRUE, sep = ",")
+inattentive_data$frequent_user <- ifelse(inattentive_data$freq_of_use_top_choice < 3, 1, 0)
+data_switched_df <- inattentive_data[inattentive_data$switch_in_preference == 1, ]
+
+main_data <- read.csv("consumer_survey_data.csv", head = TRUE, sep = ",")
+main_data$frequent_user <- ifelse(main_data$freq_of_use_top_choice < 3, 1, 0)
+```
+
+
+```{r}
+data_switched_C <- data_switched_df[data_switched_df$control_group == 1, ]
+n_switched_C <- nrow(data_switched_C)
+print(n_switched_C)
+
+data_C <- inattentive_data[inattentive_data$control_group == 1, ]
+n_C <- nrow(data_C)
+print(n_C)
+```
+
+```{r}
+control_set = ~. + factor(age) + gender_female + factor(residence) +
+                 factor(news_sources) + news_media_trust_low + factor(num_platforms_used) + 
+                 petition_signer + consumes_misinfo + factor(top_ranked_choice) + frequent_user
+```
+
+
+### EXIT
+
+# SWITCH IN PREFERENCE
+```{r}
+print(mean(data_C$switch_in_preference))
+changed_preference_reg <- lm(switch_in_preference ~ group, data = inattentive_data) 
+tab_model(changed_preference_reg)
+
+switch_coeftest <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+switch_coeftest
+```
+
+
+```{r}
+changed_preference_reg <- lm(update(switch_in_preference ~ group, control_set), data = inattentive_data) 
+tab_model(changed_preference_reg)
+
+switch_coeftest_c <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+switch_coeftest_c
+```
+
+
+
+
+
+# SWITCH TO LOWER WEIGHT/PREFERENCE:
+```{r}
+print(mean(data_C$weight_diff_negative))
+changed_preference_reg <- lm(weight_diff_negative ~ group, data = inattentive_data) 
+tab_model(changed_preference_reg)
+
+weight_coeftest <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+weight_coeftest
+```
+
+
+```{r}
+changed_preference_reg <- lm(update(weight_diff_negative ~ group, control_set), data = inattentive_data) 
+tab_model(changed_preference_reg)
+
+weight_coeftest_c <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+weight_coeftest_c
+```
+
+
+# SWITCHED CATEGORIES
+```{r}
+print(mean(data_C$switched_categories))
+changed_preference_reg <- lm(switched_categories ~ group, data = inattentive_data) 
+tab_model(changed_preference_reg)
+
+category_coeftest <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+category_coeftest
+```
+
+```{r}
+changed_preference_reg <- lm(update(switched_categories ~ group, control_set), data = inattentive_data) 
+tab_model(changed_preference_reg)
+
+category_coeftest_c <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+category_coeftest_c
+```
+
+
+# SWITCHED TO LOWER MISINFO
+```{r}
+print(mean(data_switched_C$switch_misinfo_mag))
+changed_preference_reg <- lm(switch_misinfo_mag ~ group, data = data_switched_df) 
+tab_model(changed_preference_reg)
+
+switch_misinfo_mag_coeftest <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+switch_misinfo_mag_coeftest
+```
+
+```{r}
+changed_preference_reg <- lm(update(switch_misinfo_mag ~ group, control_set), data = data_switched_df) 
+tab_model(changed_preference_reg)
+
+switch_misinfo_mag_coeftest_c <- coeftest(changed_preference_reg, vcov = vcovHC(changed_preference_reg, type = 'HC1'))
+switch_misinfo_mag_coeftest_c
+```
+
+
+```{r}
+library("texreg")
+
+texreg(list(switch_coeftest,
+            switch_coeftest_c,
+            weight_coeftest,
+            weight_coeftest_c, 
+            category_coeftest,
+            category_coeftest_c, 
+            switch_misinfo_mag_coeftest, 
+            switch_misinfo_mag_coeftest_c), 
+       stars = c(0.01, 0.05, 0.1))
+```
+
+
+### VOICE
+
+# COMPANY BLOCK
+```{r}
+mean(data_C$petition_company_block)
+company_reg <- lm(petition_company_block ~ group, data = main_data)
+tab_model(company_reg)
+
+coeftest_intention_company <- coeftest(company_reg, vcov = vcovHC(company_reg, type = 'HC1'))
+coeftest_intention_company
+```
+
+```{r}
+mean(data_C$petition_company_block)
+company_reg <- lm(update(petition_company_block ~ group, control_set), data = main_data)
+tab_model(company_reg)
+
+coeftest_intention_company_c <- coeftest(company_reg, vcov = vcovHC(company_reg, type = 'HC1'))
+coeftest_intention_company_c
+```
+
+# PLATFORM BLOCK
+```{r}
+mean(data_C$petition_platform_block)
+platform_reg <- lm(petition_platform_block ~ group, data = main_data)
+tab_model(platform_reg)
+
+coeftest_intention_platforms <- coeftest(platform_reg, vcov = vcovHC(platform_reg, type = 'HC1'))
+coeftest_intention_platforms
+```
+
+
+```{r}
+mean(data_C$petition_platform_block)
+platform_reg <- lm(update(petition_platform_block ~ group, control_set), data = main_data)
+tab_model(platform_reg)
+coeftest_intention_platforms_c <- coeftest(platform_reg, vcov = vcovHC(platform_reg, type = 'HC1'))
+coeftest_intention_platforms_c
+```
+
+
+
+# COMPANY BLOCK - INCLUDING INATTENTIVE
+```{r}
+mean(data_C$petition_company_block)
+company_reg <- lm(petition_company_block ~ group, data = inattentive_data)
+tab_model(company_reg)
+
+coeftest_intention_company_inattentive <- coeftest(company_reg, vcov = vcovHC(company_reg, type = 'HC1'))
+coeftest_intention_company_inattentive
+```
+
+```{r}
+mean(data_C$petition_company_block)
+company_reg <- lm(update(petition_company_block ~ group, control_set), data = inattentive_data)
+tab_model(company_reg)
+
+coeftest_intention_company_c_inattentive <- coeftest(company_reg, vcov = vcovHC(company_reg, type = 'HC1'))
+coeftest_intention_company_c_inattentive
+```
+
+# PLATFORM BLOCK - INCLUDING INATTENTIVE
+```{r}
+mean(data_C$petition_platform_block)
+platform_reg <- lm(petition_platform_block ~ group, data = inattentive_data)
+tab_model(platform_reg)
+
+coeftest_intention_platforms_inattentive <- coeftest(platform_reg, vcov = vcovHC(platform_reg, type = 'HC1'))
+coeftest_intention_platforms_inattentive
+```
+
+
+```{r}
+mean(data_C$petition_platform_block)
+platform_reg <- lm(update(petition_platform_block ~ group, control_set), data = inattentive_data)
+tab_model(platform_reg)
+coeftest_intention_platforms_c_inattentive <- coeftest(platform_reg, vcov = vcovHC(platform_reg, type = 'HC1'))
+coeftest_intention_platforms_c_inattentive
+```
+
+
+```{r}
+library("texreg") 
+texreg(list(coeftest_intention_company, coeftest_intention_company_c,
+            coeftest_intention_platforms, coeftest_intention_platforms_c, 
+            
+            coeftest_intention_company_inattentive, coeftest_intention_company_c_inattentive,
+            coeftest_intention_platforms_inattentive, coeftest_intention_platforms_c_inattentive), 
+       stars = c(0.01, 0.05, 0.1))
+```
+
+
+
+
+
