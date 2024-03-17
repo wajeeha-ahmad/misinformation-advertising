@@ -1,0 +1,415 @@
+---
+title: "text_analysis_of_consumer_responses"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list=ls())
+```
+
+
+# Loading packages:
+```{r include=FALSE}
+library(cowplot)
+library(GGally)
+library(psych)
+library(qwraps2)
+library(DescTools)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+library(kableExtra)
+library(dplyr)
+library(ggplot2)
+library(magrittr)
+library(tidyr)
+library(stargazer)
+library(jtools)
+library(tidyverse)
+library(haven)
+library(modelsummary)
+```
+
+
+Loading the data set:
+```{r}
+main_data <- read.csv("consumer_survey_data.csv", head = TRUE, sep = ",")
+
+# Constructing exit text analysis variables with manual categorization:
+main_data$text_reason_misinfo_o1 <- ifelse(main_data$outcome_1_topic == "Misinformation", 1, 0)
+main_data$text_reason_preference_o1 <- ifelse(((main_data$outcome_1_topic == "Like")|
+                                               (main_data$outcome_1_topic == "Love")), 1, 0)
+main_data$text_reason_use_o1 <- ifelse(((main_data$outcome_1_topic == "Use") | 
+                                        (main_data$outcome_1_topic == "Frequency of use")), 1, 0)
+main_data$text_reason_product_features_o1 <- ifelse(main_data$outcome_1_topic == "Product features", 1, 0)
+
+
+# Constructing voice text analysis variables with manual categorization:
+main_data$text_reason_misinfo_o2 <- ifelse(main_data$outcome_2_topic == "Misinformation concerns", 1, 0)
+main_data$text_reason_platform_responsibility_o2 <- ifelse(main_data$outcome_2_topic == "Platform responsibility", 1, 0)
+main_data$text_reason_company_responsibility_overall_o2 <- ifelse((main_data$outcome_2_topic == "Company responsibility") |
+                                                          (main_data$outcome_2_topic == "Reliable and trustworthy"), 1, 0)
+main_data$text_reason_best_option_o2 <- ifelse(main_data$outcome_2_topic == "Best option", 1, 0)
+main_data$text_reason_no_interest_overall_o2 <- ifelse((main_data$outcome_2_topic == "No interest") | 
+                                          (main_data$outcome_2_topic == "Trust, privacy and free speech concerns"), 1, 0)
+#main_data$text_reason_no_interest <- ifelse(main_data$outcome_2_topic == "No interest", 1, 0)
+#main_data$text_reason_no_response <- ifelse(main_data$outcome_2_topic == "N/A", 1, 0)
+```
+
+
+```{r}
+control_set = ~. + factor(age) + gender_female + factor(residence) + factor(race) + vote_biden + 
+                 factor(education) + factor(employment) + factor(household_income) + 
+                 factor(news_sources) + news_media_trust_low + factor(num_platforms_used) + 
+                 petition_signer + consumes_misinfo + factor(top_ranked_choice) + frequent_user
+```
+
+
+
+################################ EXIT #################################################################
+
+```{r}
+outcome_1_misinfo_reg <- lm(update(text_reason_misinfo_o1 ~ group, control_set), data = main_data) 
+tab_model(outcome_1_misinfo_reg)
+coeftest_outcome_1_misinfo <- coeftest(outcome_1_misinfo_reg, vcov = vcovHC(outcome_1_misinfo_reg, type = 'HC1'))
+
+outcome_1_preference_reg <- lm(update(text_reason_preference_o1 ~ group, control_set), data = main_data)
+tab_model(outcome_1_preference_reg)
+coeftest_outcome_1_preference <- coeftest(outcome_1_preference_reg, vcov = vcovHC(outcome_1_misinfo_reg, type = 'HC1'))
+
+outcome_1_use_reg <- lm(update(text_reason_use_o1 ~ group, control_set), data = main_data)
+tab_model(outcome_1_use_reg)
+coeftest_outcome_1_use <- coeftest(outcome_1_use_reg, vcov = vcovHC(outcome_1_misinfo_reg, type = 'HC1'))
+
+outcome_1_features_reg <- lm(update(text_reason_product_features_o1 ~ group, control_set), data = main_data)
+tab_model(outcome_1_features_reg)
+coeftest_outcome_1_features <- coeftest(outcome_1_features_reg, vcov = vcovHC(outcome_1_misinfo_reg, type = 'HC1'))
+coeftest_outcome_1_features
+```
+
+
+```{r}
+# Put model estimates into temporary data.frames:
+
+o1_reg_C_misinfo_frame <- data.frame(Group = "Control",
+                          Coefficient = coeftest_outcome_1_misinfo[, 1][1],
+                          SE = coeftest_outcome_1_misinfo[, 2][1],
+                          Response = "Misinformation concerns", Outcome = "Exit")
+o1_reg_T1_misinfo_frame <- data.frame(Group = "T1",
+                          Coefficient = coeftest_outcome_1_misinfo[, 1][2],
+                          SE = coeftest_outcome_1_misinfo[, 2][2],
+                          Response = "Misinformation concerns", Outcome = "Exit")
+o1_reg_T2_misinfo_frame <- data.frame(Group = "T2",
+                          Coefficient = coeftest_outcome_1_misinfo[, 1][3],
+                          SE = coeftest_outcome_1_misinfo[, 2][3],
+                          Response = "Misinformation concerns", Outcome = "Exit")
+o1_reg_T3_misinfo_frame <- data.frame(Group = "T3",
+                          Coefficient = coeftest_outcome_1_misinfo[, 1][4],
+                          SE = coeftest_outcome_1_misinfo[, 2][4],
+                          Response = "Misinformation concerns", Outcome = "Exit")
+o1_reg_T4_misinfo_frame <- data.frame(Group = "T4",
+                          Coefficient = coeftest_outcome_1_misinfo[, 1][5],
+                          SE = coeftest_outcome_1_misinfo[, 2][5],
+                          Response = "Misinformation concerns", Outcome = "Exit")
+
+o1_reg_C_preference_frame <- data.frame(Group = "Control",
+                          Coefficient = coeftest_outcome_1_preference[, 1][1],
+                          SE = coeftest_outcome_1_preference[, 2][1],
+                          Response = "Product preference", Outcome = "Exit")
+o1_reg_T1_preference_frame <- data.frame(Group = "T1",
+                          Coefficient = coeftest_outcome_1_preference[, 1][2],
+                          SE = coeftest_outcome_1_preference[, 2][2],
+                          Response = "Product preference", Outcome = "Exit")
+o1_reg_T2_preference_frame <- data.frame(Group = "T2",
+                          Coefficient = coeftest_outcome_1_preference[, 1][3],
+                          SE = coeftest_outcome_1_preference[, 2][3],
+                          Response = "Product preference", Outcome = "Exit")
+o1_reg_T3_preference_frame <- data.frame(Group = "T3",
+                          Coefficient = coeftest_outcome_1_preference[, 1][4],
+                          SE = coeftest_outcome_1_preference[, 2][4],
+                          Response = "Product preference", Outcome = "Exit")
+o1_reg_T4_preference_frame <- data.frame(Group = "T4",
+                          Coefficient = coeftest_outcome_1_preference[, 1][5],
+                          SE = coeftest_outcome_1_preference[, 2][5],
+                          Response = "Product preference", Outcome = "Exit")
+
+
+o1_reg_C_use_frame <- data.frame(Group = "Control",
+                          Coefficient = coeftest_outcome_1_use[, 1][1],
+                          SE = coeftest_outcome_1_use[, 2][1],
+                          Response = "Product usage", Outcome = "Exit")
+o1_reg_T1_use_frame <- data.frame(Group = "T1",
+                          Coefficient = coeftest_outcome_1_use[, 1][2],
+                          SE = coeftest_outcome_1_use[, 2][2],
+                          Response = "Product usage", Outcome = "Exit")
+o1_reg_T2_use_frame <- data.frame(Group = "T2",
+                          Coefficient = coeftest_outcome_1_use[, 1][3],
+                          SE = coeftest_outcome_1_use[, 2][3],
+                          Response = "Product usage", Outcome = "Exit")
+o1_reg_T3_use_frame <- data.frame(Group = "T3",
+                          Coefficient = coeftest_outcome_1_use[, 1][4],
+                          SE = coeftest_outcome_1_use[, 2][4],
+                          Response = "Product usage", Outcome = "Exit")
+o1_reg_T4_use_frame <- data.frame(Group = "T4",
+                          Coefficient = coeftest_outcome_1_use[, 1][5],
+                          SE = coeftest_outcome_1_use[, 2][5],
+                          Response = "Product usage", Outcome = "Exit")
+
+
+o1_reg_C_features_frame <- data.frame(Group = "Control",
+                          Coefficient = coeftest_outcome_1_features[, 1][1],
+                          SE = coeftest_outcome_1_features[, 2][1],
+                          Response = "Product features", Outcome = "Exit")
+o1_reg_T1_features_frame <- data.frame(Group = "T1",
+                          Coefficient = coeftest_outcome_1_features[, 1][2],
+                          SE = coeftest_outcome_1_features[, 2][2],
+                          Response = "Product features", Outcome = "Exit")
+o1_reg_T2_features_frame <- data.frame(Group = "T2",
+                          Coefficient = coeftest_outcome_1_features[, 1][3],
+                          SE = coeftest_outcome_1_features[, 2][3],
+                          Response = "Product features", Outcome = "Exit")
+o1_reg_T3_features_frame <- data.frame(Group = "T3",
+                          Coefficient = coeftest_outcome_1_features[, 1][4],
+                          SE = coeftest_outcome_1_features[, 2][4],
+                          Response = "Product features", Outcome = "Exit")
+o1_reg_T4_features_frame <- data.frame(Group = "T4",
+                          Coefficient = coeftest_outcome_1_features[, 1][5],
+                          SE = coeftest_outcome_1_features[, 2][5],
+                          Response = "Product features", Outcome = "Exit")
+```
+
+```{r}
+# Combine these data.frames
+o1_model_frame <- data.frame(rbind(o1_reg_T1_misinfo_frame, o1_reg_T2_misinfo_frame, 
+                                   o1_reg_T3_misinfo_frame, o1_reg_T4_misinfo_frame,
+                                   o1_reg_T1_preference_frame, o1_reg_T2_preference_frame,
+                                   o1_reg_T3_preference_frame, o1_reg_T4_preference_frame,
+                                   o1_reg_T1_use_frame, o1_reg_T2_use_frame, 
+                                   o1_reg_T3_use_frame, o1_reg_T4_use_frame,
+                                   o1_reg_T1_features_frame, o1_reg_T2_features_frame,
+                                   o1_reg_T3_features_frame, o1_reg_T4_features_frame))  # etc.
+```
+
+
+
+
+
+
+#################### VOICE ######################################################################################
+
+```{r}
+outcome_2_reg_company <- lm(update(text_reason_company_responsibility_overall_o2 ~ group, control_set), 
+                            data = main_data) 
+coeftest_outcome_2_company <- coeftest(outcome_2_reg_company, vcov = vcovHC(outcome_2_reg_company, type = 'HC1'))
+
+outcome_2_reg_platform <- lm(update(text_reason_platform_responsibility_o2 ~ group, control_set), data = main_data)
+coeftest_outcome_2_platform <- coeftest(outcome_2_reg_platform, vcov = vcovHC(outcome_2_reg_platform, type = 'HC1'))
+
+outcome_2_reg_misinfo <- lm(update(text_reason_misinfo_o2 ~ group, control_set), data = main_data)
+coeftest_outcome_2_misinfo <- coeftest(outcome_2_reg_misinfo, vcov = vcovHC(outcome_2_reg_misinfo, type = 'HC1'))
+
+outcome_2_reg_best_option <- lm(update(text_reason_best_option_o2 ~ group, control_set), data = main_data)
+coeftest_outcome_2_best_option <- coeftest(outcome_2_reg_best_option, 
+                                           vcov = vcovHC(outcome_2_reg_best_option, type = 'HC1'))
+
+outcome_2_reg_no_interest <- lm(update(text_reason_no_interest_overall_o2 ~ group, control_set), 
+                                data = main_data)
+coeftest_outcome_2_no_interest <- coeftest(outcome_2_reg_no_interest, 
+                                           vcov = vcovHC(outcome_2_reg_no_interest, type = 'HC1'))
+```
+
+
+
+```{r}
+# Put model estimates into temporary data.frames:
+
+o2_reg_C_company_frame <- data.frame(Group = "Control",
+                          Coefficient = coeftest_outcome_2_company[, 1][1],
+                          SE = coeftest_outcome_2_company[, 2][1],
+                          Response = "Company responsibility", Outcome = "Voice")
+o2_reg_T1_company_frame <- data.frame(Group = "T1",
+                          Coefficient = coeftest_outcome_2_company[, 1][2],
+                          SE = coeftest_outcome_2_company[, 2][2],
+                          Response = "Company responsibility", Outcome = "Voice")
+o2_reg_T2_company_frame <- data.frame(Group = "T2",
+                          Coefficient = coeftest_outcome_2_company[, 1][3],
+                          SE = coeftest_outcome_2_company[, 2][3],
+                          Response = "Company responsibility", Outcome = "Voice")
+o2_reg_T3_company_frame <- data.frame(Group = "T3",
+                          Coefficient = coeftest_outcome_2_company[, 1][4],
+                          SE = coeftest_outcome_2_company[, 2][4],
+                          Response = "Company responsibility", Outcome = "Voice")
+o2_reg_T4_company_frame <- data.frame(Group = "T4",
+                          Coefficient = coeftest_outcome_2_company[, 1][5],
+                          SE = coeftest_outcome_2_company[, 2][5],
+                          Response = "Company responsibility", Outcome = "Voice")
+
+
+o2_reg_C_platform_frame <- data.frame(Group = "Control",
+                          Coefficient = coeftest_outcome_2_platform[, 1][1],
+                          SE = coeftest_outcome_2_platform[, 2][1],
+                          Response = "Platform responsibility", Outcome = "Voice")
+o2_reg_T1_platform_frame <- data.frame(Group = "T1",
+                          Coefficient = coeftest_outcome_2_platform[, 1][2],
+                          SE = coeftest_outcome_2_platform[, 2][2],
+                          Response = "Platform responsibility", Outcome = "Voice")
+o2_reg_T2_platform_frame <- data.frame(Group = "T2",
+                          Coefficient = coeftest_outcome_2_platform[, 1][3],
+                          SE = coeftest_outcome_2_platform[, 2][3],
+                          Response = "Platform responsibility", Outcome = "Voice")
+o2_reg_T3_platform_frame <- data.frame(Group = "T3",
+                          Coefficient = coeftest_outcome_2_platform[, 1][4],
+                          SE = coeftest_outcome_2_platform[, 2][4],
+                          Response = "Platform responsibility", Outcome = "Voice")
+o2_reg_T4_platform_frame <- data.frame(Group = "T4",
+                          Coefficient = coeftest_outcome_2_platform[, 1][5],
+                          SE = coeftest_outcome_2_platform[, 2][5],
+                          Response = "Platform responsibility", Outcome = "Voice")
+
+
+o2_reg_C_misinfo_frame <- data.frame(Group = "Control",
+                          Coefficient = coeftest_outcome_2_misinfo[, 1][1],
+                          SE = coeftest_outcome_2_misinfo[, 2][1],
+                          Response = "Misinformation concerns", Outcome = "Voice")
+o2_reg_T1_misinfo_frame <- data.frame(Group = "T1",
+                          Coefficient = coeftest_outcome_2_misinfo[, 1][2],
+                          SE = coeftest_outcome_2_misinfo[, 2][2],
+                          Response = "Misinformation concerns", Outcome = "Voice")
+o2_reg_T2_misinfo_frame <- data.frame(Group = "T2",
+                          Coefficient = coeftest_outcome_2_misinfo[, 1][3],
+                          SE = coeftest_outcome_2_misinfo[, 2][3],
+                          Response = "Misinformation concerns", Outcome = "Voice")
+o2_reg_T3_misinfo_frame <- data.frame(Group = "T3",
+                          Coefficient = coeftest_outcome_2_misinfo[, 1][4],
+                          SE = coeftest_outcome_2_misinfo[, 2][4],
+                          Response = "Misinformation concerns", Outcome = "Voice")
+o2_reg_T4_misinfo_frame <- data.frame(Group = "T4",
+                          Coefficient = coeftest_outcome_2_misinfo[, 1][5],
+                          SE = coeftest_outcome_2_misinfo[, 2][5],
+                          Response = "Misinformation concerns", Outcome = "Voice")
+
+
+o2_reg_C_best_option_frame <- data.frame(Group = "Control",
+                          Coefficient = coeftest_outcome_2_best_option[, 1][1],
+                          SE = coeftest_outcome_2_best_option[, 2][1],
+                          Response = "Best option", Outcome = "Voice")
+o2_reg_T1_best_option_frame <- data.frame(Group = "T1",
+                          Coefficient = coeftest_outcome_2_best_option[, 1][2],
+                          SE = coeftest_outcome_2_best_option[, 2][2],
+                          Response = "Best option", Outcome = "Voice")
+o2_reg_T2_best_option_frame <- data.frame(Group = "T2",
+                          Coefficient = coeftest_outcome_2_best_option[, 1][3],
+                          SE = coeftest_outcome_2_best_option[, 2][3],
+                          Response = "Best option", Outcome = "Voice")
+o2_reg_T3_best_option_frame <- data.frame(Group = "T3",
+                          Coefficient = coeftest_outcome_2_best_option[, 1][4],
+                          SE = coeftest_outcome_2_best_option[, 2][4],
+                          Response = "Best option", Outcome = "Voice")
+o2_reg_T4_best_option_frame <- data.frame(Group = "T4",
+                          Coefficient = coeftest_outcome_2_best_option[, 1][5],
+                          SE = coeftest_outcome_2_best_option[, 2][5],
+                          Response = "Best option", Outcome = "Voice")
+
+
+o2_reg_C_no_interest_frame <- data.frame(Group = "Control",
+                          Coefficient = coeftest_outcome_2_no_interest[, 1][1],
+                          SE = coeftest_outcome_2_no_interest[, 2][1],
+                          Response = "No interest", Outcome = "Voice")
+o2_reg_T1_no_interest_frame <- data.frame(Group = "T1",
+                          Coefficient = coeftest_outcome_2_no_interest[, 1][2],
+                          SE = coeftest_outcome_2_no_interest[, 2][2],
+                          Response = "No interest", Outcome = "Voice")
+o2_reg_T2_no_interest_frame <- data.frame(Group = "T2",
+                          Coefficient = coeftest_outcome_2_no_interest[, 1][3],
+                          SE = coeftest_outcome_2_no_interest[, 2][3],
+                          Response = "No interest", Outcome = "Voice")
+o2_reg_T3_no_interest_frame <- data.frame(Group = "T3",
+                          Coefficient = coeftest_outcome_2_no_interest[, 1][4],
+                          SE = coeftest_outcome_2_no_interest[, 2][4],
+                          Response = "No interest", Outcome = "Voice")
+o2_reg_T4_no_interest_frame <- data.frame(Group = "T4",
+                          Coefficient = coeftest_outcome_2_no_interest[, 1][5],
+                          SE = coeftest_outcome_2_no_interest[, 2][5],
+                          Response = "No interest", Outcome = "Voice")
+```
+
+
+```{r}
+o2_model_frame <- data.frame(rbind(o2_reg_T1_company_frame, o2_reg_T2_company_frame, 
+                                   o2_reg_T3_company_frame, o2_reg_T4_company_frame, 
+                                   o2_reg_T1_platform_frame, o2_reg_T2_platform_frame,
+                                   o2_reg_T3_platform_frame, o2_reg_T4_platform_frame, 
+                                   o2_reg_T1_misinfo_frame, o2_reg_T2_misinfo_frame, 
+                                   o2_reg_T3_misinfo_frame, o2_reg_T4_misinfo_frame,
+                                   o2_reg_T1_best_option_frame, o2_reg_T2_best_option_frame,
+                                   o2_reg_T3_best_option_frame, o2_reg_T4_best_option_frame,
+                                   o2_reg_T1_no_interest_frame, o2_reg_T2_no_interest_frame,
+                                   o2_reg_T3_no_interest_frame, o2_reg_T4_no_interest_frame))  
+```
+
+
+```{r }
+positions <- c("Exit", "Exit", "Exit", "Exit", "Exit", "Exit", "Exit", "Exit", "Exit", "Exit",
+               "Exit", "Exit", "Exit", "Exit", "Exit", "Exit", "Exit", "Exit", "Exit", "Exit",
+               "Voice", "Voice", "Voice", "Voice", "Voice", "Voice", "Voice", "Voice", "Voice", "Voice", 
+               "Voice", "Voice", "Voice", "Voice", "Voice", "Voice", "Voice", "Voice", "Voice", "Voice")
+
+positions <- c("Misinformation concerns", "Misinformation concerns", "Misinformation concerns", 
+               "Misinformation concerns", "Misinformation concerns", 
+               "Product features", "Product features", "Product features", "Product features", "Product features",
+               "Product usage", "Product usage", "Product usage", "Product usage", "Product usage",
+               "Product preference", "Product preference", "Product preference", "Product preference", "Product preference")
+```
+
+
+```{r fig.height = 6, fig.width = 5.5, fig.align = "center"}
+# Specify the width of your confidence intervals
+interval_1 <- -qnorm((1 - 0.9)/2)  # 90% multiplier
+interval_2 <- -qnorm((1 - 0.95)/2)  # 95% multiplier
+
+# Plot
+zp1 <- ggplot(o1_model_frame, aes(colour = Group))
+zp1 <- zp1 + geom_hline(yintercept = 0, colour = gray(1/2), lty = 2)
+zp1 <- zp1 + coord_flip() + theme_bw() + theme(legend.position = "bottom", 
+                                               legend.direction = "horizontal", 
+                                               axis.text.x = element_text(face="bold", size = 11),
+                                               axis.text.y = element_text(face="bold", size = 11))
+zp1 <- zp1 + geom_pointrange(aes(x = Response, y = Coefficient, ymin = Coefficient - SE * interval_2,
+                                 ymax = Coefficient + SE * interval_2),
+                             lwd = 1/2, position = position_dodge(width = 1/2), shape = 20) # fill = "WHITE"
+zp1 <- zp1 + ggtitle("(a) Text response clusters for exit")
+print(zp1)  
+```
+
+
+
+```{r fig.height = 6, fig.width = 6, fig.align = "center"}
+# Specify the width of your confidence intervals
+interval_1 <- -qnorm((1 - 0.9)/2)  # 90% multiplier
+interval_2 <- -qnorm((1 - 0.95)/2)  # 95% multiplier
+
+# Plot
+zp2 <- ggplot(o2_model_frame, aes(colour = Group))
+zp2 <- zp2 + geom_hline(yintercept = 0, colour = gray(1/2), lty = 2)
+zp2 <- zp2 + geom_pointrange(aes(x = Response, y = Coefficient, ymin = Coefficient - SE * interval_2,
+                                 ymax = Coefficient + SE * interval_2),
+                             lwd = 1/2, position = position_dodge(width = 1/2), shape = 20) 
+zp2 <- zp2 + coord_flip() + theme_bw() 
+zp2 <- zp2 + theme(legend.position = "bottom", legend.direction = "horizontal", 
+                   axis.text.x = element_text(face="bold", size = 11), 
+                   axis.text.y = element_text(face="bold", size = 11),)
+zp2 <- zp2 + ggtitle("(b) Text response clusters for voice")
+print(zp2) 
+```
+
+
+
+```{r fig.height = 6, fig.width = 12, fig.align = "center"}
+cowplot::plot_grid(zp1, zp2, ncol = 2) 
+```
+
+
+
+
+
