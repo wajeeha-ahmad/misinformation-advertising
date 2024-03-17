@@ -1,4 +1,3 @@
-# Replication materials
 
 Replication materials for each component of the paper are provided in their respective sections.  
 * Descriptive: Contains code analyzing advertising patterns on misinformation websites during the 2019-2021 period. 
