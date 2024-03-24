@@ -1,0 +1,367 @@
+---
+title: "main_consumer_voice_analysis"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list=ls())
+```
+
+
+# Loading packages:
+```{r include=FALSE}
+library(psych)
+library(qwraps2)
+library(DescTools)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+library(dplyr)
+library(ggplot2)
+library(magrittr)
+library(tidyr)
+library(jtools)
+library(tidyverse)
+library(haven)
+library(modelsummary)
+library(lmtest)
+library(sandwich)
+require(foreign)
+require(MASS)
+require(Hmisc)
+require(reshape2)
+```
+
+
+# Loading the data set:
+```{r}
+main_data <- read.csv("consumer_survey_data.csv", head = TRUE, sep = ",")
+
+main_data$frequent_user <- ifelse(main_data$freq_of_use_top_choice < 3, 1, 0)
+data_switched_df <- main_data[main_data$switch_in_preference == 1, ]
+```
+
+
+```{r}
+data_C <- main_data[main_data$control_group == 1, ]
+n_C <- nrow(data_C)
+
+data_T1 <- main_data[main_data$T1_group == 1, ]
+n_T1 <- nrow(data_T1)
+
+data_T2 <- main_data[main_data$T2_group == 1, ]
+n_T2 <- nrow(data_T2)
+
+data_T3 <- main_data[main_data$T3_group == 1, ]
+n_T3 <- nrow(data_T3)
+
+data_T4 <- main_data[main_data$T4_group == 1, ]
+n_T4 <- nrow(data_T4)
+
+print(n_C)
+print(n_T1)
+print(n_T2)
+print(n_T3)
+print(n_T4)
+```
+
+
+```{r}
+control_set = ~. + factor(age) + gender_female + factor(residence) + factor(race) + vote_biden + 
+                 factor(education) + factor(employment) + factor(household_income) + 
+                 factor(news_sources) + news_media_trust_low + factor(num_platforms_used) + 
+                 petition_signer + consumes_misinfo + factor(top_ranked_choice) + frequent_user
+```
+
+
+# CLICKS - COMPANIES:
+
+```{r}
+mean(data_C$petition_clicks_company_block)
+clicks_company_reg <- lm(petition_clicks_company_block ~ group, data = main_data)
+tab_model(clicks_company_reg)
+
+coeftest_clicks_company <- coeftest(clicks_company_reg, vcov = vcovHC(clicks_company_reg, type = 'HC1'))
+coeftest_clicks_company
+```
+
+
+```{r}
+mean(data_C$petition_clicks_company_block)
+clicks_company_reg <- lm(update(petition_clicks_company_block ~ group, control_set), data = main_data)
+tab_model(clicks_company_reg)
+
+coeftest_clicks_company_c <- coeftest(clicks_company_reg, vcov = vcovHC(clicks_company_reg, type = 'HC1'))
+coeftest_clicks_company_c
+```
+
+# CLICKS - PLATFORMS
+
+```{r}
+mean(data_C$petition_clicks_platform_block)
+clicks_platform_reg <- lm(petition_clicks_platform_block ~ group, data = main_data)
+tab_model(clicks_platform_reg)
+
+coeftest_clicks_platforms <- coeftest(clicks_platform_reg, vcov = vcovHC(clicks_platform_reg, type = 'HC1'))
+coeftest_clicks_platforms
+```
+
+
+
+```{r}
+mean(data_C$petition_clicks_platform_block)
+clicks_platform_reg <- lm(update(petition_clicks_platform_block ~ group, control_set), data = main_data)
+tab_model(clicks_platform_reg)
+
+coeftest_clicks_platforms_c <- coeftest(clicks_platform_reg, vcov = vcovHC(clicks_platform_reg, type = 'HC1'))
+coeftest_clicks_platforms_c
+```
+
+
+# Average treatment effects on voice:
+```{r}
+library("texreg")
+texreg(list(coeftest_clicks_company, coeftest_clicks_company_c,
+            coeftest_clicks_platforms, coeftest_clicks_platforms_c), 
+       stars = c(0.01, 0.05, 0.1))
+```
+
+
+############################################# PAIRWISE P-VALUE COMPARISONS ##########################################
+
+# CLICKS - COMPANIES:
+
+```{r}
+mean(data_C$petition_clicks_company_block)
+clicks_company_reg <- lm(petition_clicks_company_block ~ relevel(as.factor(group), ref = "T2"), data = main_data)
+tab_model(clicks_company_reg)
+
+coeftest_clicks_company_T2 <- coeftest(clicks_company_reg, vcov = vcovHC(clicks_company_reg, type = 'HC1'))
+coeftest_clicks_company_T2
+```
+
+
+```{r}
+mean(data_C$petition_clicks_company_block)
+clicks_company_reg <- lm(petition_clicks_company_block ~ relevel(as.factor(group), ref = "T3"), data = main_data)
+tab_model(clicks_company_reg)
+
+coeftest_clicks_company_T3 <- coeftest(clicks_company_reg, vcov = vcovHC(clicks_company_reg, type = 'HC1'))
+coeftest_clicks_company_T3
+```
+
+
+```{r}
+mean(data_C$petition_clicks_company_block)
+clicks_company_reg <- lm(petition_clicks_company_block ~ relevel(as.factor(group), ref = "T4"), data = main_data)
+tab_model(clicks_company_reg)
+
+coeftest_clicks_company_T4 <- coeftest(clicks_company_reg, vcov = vcovHC(clicks_company_reg, type = 'HC1'))
+coeftest_clicks_company_T4
+```
+
+
+```{r}
+mean(data_C$petition_clicks_company_block)
+clicks_company_reg <- lm(update(petition_clicks_company_block ~ relevel(as.factor(group), ref = "T2"), control_set), 
+                         data = main_data)
+tab_model(clicks_company_reg)
+
+coeftest_clicks_company_c_T2 <- coeftest(clicks_company_reg, vcov = vcovHC(clicks_company_reg, type = 'HC1'))
+coeftest_clicks_company_c_T2
+```
+
+
+```{r}
+mean(data_C$petition_clicks_company_block)
+clicks_company_reg <- lm(update(petition_clicks_company_block ~ relevel(as.factor(group), ref = "T3"), control_set), 
+                         data = main_data)
+tab_model(clicks_company_reg)
+
+coeftest_clicks_company_c_T3 <- coeftest(clicks_company_reg, vcov = vcovHC(clicks_company_reg, type = 'HC1'))
+coeftest_clicks_company_c_T3
+```
+
+
+```{r}
+mean(data_C$petition_clicks_company_block)
+clicks_company_reg <- lm(update(petition_clicks_company_block ~ relevel(as.factor(group), ref = "T4"), control_set), 
+                         data = main_data)
+tab_model(clicks_company_reg)
+
+coeftest_clicks_company_c_T4 <- coeftest(clicks_company_reg, vcov = vcovHC(clicks_company_reg, type = 'HC1'))
+coeftest_clicks_company_c_T4
+```
+
+
+# CLICKS - PLATFORMS
+
+```{r}
+mean(data_C$petition_clicks_platform_block)
+clicks_platform_reg <- lm(petition_clicks_platform_block ~ relevel(as.factor(group), ref = "T2"), data = main_data)
+tab_model(clicks_platform_reg)
+
+coeftest_clicks_platforms_T2 <- coeftest(clicks_platform_reg, vcov = vcovHC(clicks_platform_reg, type = 'HC1'))
+coeftest_clicks_platforms_T2
+```
+
+
+```{r}
+mean(data_C$petition_clicks_platform_block)
+clicks_platform_reg <- lm(petition_clicks_platform_block ~ relevel(as.factor(group), ref = "T3"), data = main_data)
+tab_model(clicks_platform_reg)
+
+coeftest_clicks_platforms_T3 <- coeftest(clicks_platform_reg, vcov = vcovHC(clicks_platform_reg, type = 'HC1'))
+coeftest_clicks_platforms_T3
+```
+
+
+```{r}
+mean(data_C$petition_clicks_platform_block)
+clicks_platform_reg <- lm(petition_clicks_platform_block ~ relevel(as.factor(group), ref = "T4"), data = main_data)
+tab_model(clicks_platform_reg)
+
+coeftest_clicks_platforms_T4 <- coeftest(clicks_platform_reg, vcov = vcovHC(clicks_platform_reg, type = 'HC1'))
+coeftest_clicks_platforms_T4
+```
+
+
+
+```{r}
+mean(data_C$petition_clicks_platform_block)
+clicks_platform_reg <- lm(update(petition_clicks_platform_block ~ relevel(as.factor(group), ref = "T2"), control_set), 
+                          data = main_data)
+tab_model(clicks_platform_reg)
+
+coeftest_clicks_platforms_c_T2 <- coeftest(clicks_platform_reg, vcov = vcovHC(clicks_platform_reg, type = 'HC1'))
+coeftest_clicks_platforms_c_T2
+```
+
+
+```{r}
+mean(data_C$petition_clicks_platform_block)
+clicks_platform_reg <- lm(update(petition_clicks_platform_block ~ relevel(as.factor(group), ref = "T3"), control_set), 
+                          data = main_data)
+tab_model(clicks_platform_reg)
+
+coeftest_clicks_platforms_c_T3 <- coeftest(clicks_platform_reg, vcov = vcovHC(clicks_platform_reg, type = 'HC1'))
+coeftest_clicks_platforms_c_T3
+```
+
+
+```{r}
+mean(data_C$petition_clicks_platform_block)
+clicks_platform_reg <- lm(update(petition_clicks_platform_block ~ relevel(as.factor(group), ref = "T4"), control_set), 
+                          data = main_data)
+tab_model(clicks_platform_reg)
+
+coeftest_clicks_platforms_c_T4 <- coeftest(clicks_platform_reg, vcov = vcovHC(clicks_platform_reg, type = 'HC1'))
+coeftest_clicks_platforms_c_T4
+```
+
+
+
+
+############################################# ALL VOICE OUTCOMES BELOW ##############################################
+
+
+# Intention to sign:
+
+```{r}
+mean(data_C$petition_company_block)
+company_reg <- lm(update(petition_company_block ~ group, control_set), data = main_data)
+tab_model(company_reg)
+
+coeftest_intention_company_c <- coeftest(company_reg, vcov = vcovHC(company_reg, type = 'HC1'))
+coeftest_intention_company_c
+```
+
+
+```{r}
+mean(data_C$petition_platform_block)
+platform_reg <- lm(update(petition_platform_block ~ group, control_set), data = main_data)
+tab_model(platform_reg)
+coeftest_intention_platforms_c <- coeftest(platform_reg, vcov = vcovHC(platform_reg, type = 'HC1'))
+coeftest_intention_platforms_c
+```
+
+
+# Self-reported
+
+```{r}
+mean(data_C$petition_self_reported_company_block)
+reported_company_reg <- lm(update(petition_self_reported_company_block ~ group, control_set), data = main_data) 
+tab_model(reported_company_reg)
+coeftest_reported_company_c <- coeftest(reported_company_reg, vcov = vcovHC(reported_company_reg, type='HC1'))
+coeftest_reported_company_c
+```
+
+
+```{r}
+mean(data_C$petition_self_reported_platform_block)
+reported_platforms_reg <- lm(update(petition_self_reported_platform_block ~ group, control_set), data = main_data)
+tab_model(reported_platforms_reg)
+coeftest_reported_platforms_c <- coeftest(reported_platforms_reg, vcov = vcovHC(reported_platforms_reg, type='HC1'))
+coeftest_reported_platforms_c
+```
+
+
+# Average treatment effects - other voice outcomes:
+```{r}
+library("texreg")
+texreg(list(coeftest_clicks_company, coeftest_clicks_company_c, coeftest_reported_company_c,
+            coeftest_intention_platforms_c, coeftest_clicks_platforms_c, coeftest_reported_platforms_c), 
+       stars = c(0.01, 0.05, 0.1))
+```
+
+
+# Actual signatures:
+
+## Company block: T1 vs C
+```{r}
+print(96/n_C)
+prop.test(x = c(96, 111), 
+          n = c(n_C, n_T1), p = NULL, alternative = "two.sided", correct = FALSE)
+```
+
+## Company block: T2 vs C
+```{r}
+prop.test(x = c(96, 84), 
+          n = c(n_C, n_T2), p = NULL, alternative = "two.sided", correct = FALSE)
+```
+
+## Company block: T3 vs C
+```{r}
+prop.test(x = c(96, 89), 
+          n = c(n_C, n_T3), p = NULL, alternative = "two.sided", correct = FALSE)
+```
+
+
+## Platform block: T1 vs C
+```{r}
+85/n_C
+prop.test(x = c(85, 73), 
+          n = c(n_C, n_T1), p = NULL, alternative = "two.sided", correct = FALSE)
+```
+
+## Platform block: T2 vs C
+```{r}
+prop.test(x = c(85, 114), 
+          n = c(n_C, n_T2), p = NULL, alternative = "two.sided", correct = FALSE)
+```
+
+## Platform block: T3 vs C
+```{r}
+prop.test(x = c(85, 86), 
+          n = c(n_C, n_T3), p = NULL, alternative = "two.sided", correct = FALSE)
+```
+
+
+
+
+
+
+
+
+
